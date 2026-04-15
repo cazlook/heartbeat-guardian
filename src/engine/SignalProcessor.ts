@@ -45,6 +45,7 @@ export function createSession(watchData: SmartWatchData, config: EngineConfig = 
       session_m2: 0,
       combined_mean: resting_hr,
       combined_std: Math.max(resting_hr_std, config.min_std_clamp),
+      session_start_time: now,
     },
     readings_count: 0,
     learning_start_time: now,
