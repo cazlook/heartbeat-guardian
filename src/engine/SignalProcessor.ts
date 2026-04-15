@@ -217,9 +217,19 @@ export function processReading(
   // Step 2: BPM cap
   if (bpm >= config.max_bpm) return reject(bpm, session, 'REJECTED_BPM_TOO_HIGH', context);
 
-  // Step 3: Update stats
-  updateSessionStats(session.baseline, bpm);
-  updateCombinedBaseline(session, config);
+  // Step 3: Check if we should freeze baseline (z elevated = potential reaction)
+  const prelimZ = session.baseline.session_count >= 2
+    ? computeZScore(bpm, session.baseline.combined_mean, session.baseline.combined_std, config.min_std_clamp)
+    : 0;
+  const hasAccelEarly = context.accelerometer_magnitude !== undefined;
+  const { z_thresh: earlyThresh } = getEffectiveThresholds(hasAccelEarly, config);
+  const baselineFrozen = prelimZ >= earlyThresh && session.phase === 'active';
+
+  // Only update baseline if not frozen (prevent baseline from absorbing a reaction)
+  if (!baselineFrozen) {
+    updateSessionStats(session.baseline, bpm);
+    updateCombinedBaseline(session, config);
+  }
   session.readings_count += 1;
   session.learning_readings.push(bpm);
   if (session.learning_readings.length > config.variance_window_size) {
