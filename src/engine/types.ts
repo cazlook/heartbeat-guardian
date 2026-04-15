@@ -117,6 +117,7 @@ export interface EngineConfig {
   sustained_duration_sec: number;    // min seconds z must stay above threshold
   sustained_min_readings: number;    // min consecutive readings above threshold
   no_accel_z_penalty: number;        // raise z_threshold by this when no accelerometer
+  no_accel_sustained_multiplier: number; // multiply sustained requirements when no accel
   recent_history_size: number;       // size of recent_bpm_history buffer
 }
 
