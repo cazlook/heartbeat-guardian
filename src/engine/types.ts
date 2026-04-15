@@ -142,6 +142,6 @@ export const DEFAULT_CONFIG: EngineConfig = {
   sustained_duration_sec: 8,      // must hold for 8 seconds
   sustained_min_readings: 4,      // at least 4 consecutive readings above threshold
   no_accel_z_penalty: 1.0,
-  no_accel_sustained_multiplier: 4.0, // need 16 consecutive + 32s without accel
+  no_accel_sustained_multiplier: 5.0, // need 20 consecutive + 40s without accel
   recent_history_size: 20,        // keep last 20 readings
 };
