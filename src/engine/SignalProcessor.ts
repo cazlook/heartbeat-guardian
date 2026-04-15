@@ -298,16 +298,18 @@ export function processReading(
   return reading;
 }
 
-function checkSustainedWithThreshold(session: SessionState, z: number, z_thresh: number, config: EngineConfig): boolean {
+function checkSustainedWithThreshold(session: SessionState, z: number, z_thresh: number, hasAccel: boolean, config: EngineConfig): boolean {
   const now = Date.now();
   const b = session.baseline;
+  const mult = hasAccel ? 1 : config.no_accel_sustained_multiplier;
+  const reqDuration = config.sustained_duration_sec * mult;
+  const reqReadings = Math.ceil(config.sustained_min_readings * mult);
 
   if (z >= z_thresh) {
     if (session.sustained_above_start === null) {
       session.sustained_above_start = now;
     }
     const duration = (now - session.sustained_above_start) / 1000;
-    // Count consecutive above threshold
     const hist = session.recent_bpm_history;
     let consecutive = 0;
     for (let i = hist.length - 1; i >= 0; i--) {
@@ -315,7 +317,7 @@ function checkSustainedWithThreshold(session: SessionState, z: number, z_thresh:
       if (zi >= z_thresh) consecutive++;
       else break;
     }
-    return duration >= config.sustained_duration_sec && consecutive >= config.sustained_min_readings;
+    return duration >= reqDuration && consecutive >= reqReadings;
   } else {
     session.sustained_above_start = null;
     return false;
