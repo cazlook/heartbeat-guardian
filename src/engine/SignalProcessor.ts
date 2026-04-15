@@ -274,7 +274,7 @@ export function processReading(
   }
 
   // Step 11: Sustained duration check — z is above threshold, but is it sustained?
-  const sustained = checkSustainedWithThreshold(session, z, z_thresh, config);
+  const sustained = checkSustainedWithThreshold(session, z, z_thresh, hasAccel, config);
   if (!sustained) {
     const reason: ReasonCode = hasAccel ? 'REJECTED_NOT_SUSTAINED' : 'REJECTED_NO_ACCEL_LOW_CONFIDENCE';
     const r = makeReading(bpm, session, z, 'REJECTED', reason, context);
