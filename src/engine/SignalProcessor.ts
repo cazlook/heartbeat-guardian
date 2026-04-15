@@ -309,6 +309,13 @@ export function processReading(
     return r;
   }
 
+  // Step 11b: Without accelerometer, reject if monotonic climb (likely walking/exercise)
+  if (!hasAccel && isMonotonicClimb(session, config)) {
+    const r = makeReading(bpm, session, z, 'REJECTED', 'REJECTED_NO_ACCEL_LOW_CONFIDENCE', context);
+    logReading(r);
+    return r;
+  }
+
   // Step 12: Decision
   let decision: Decision;
   let reason_code: ReasonCode;
