@@ -45,7 +45,10 @@ export interface SessionState {
   baseline: Baseline;
   readings_count: number;
   learning_start_time: number;
-  learning_readings: number[];
+  learning_readings: number[]; // recent window for variance
+  recent_bpm_history: number[]; // last N readings for rate-of-change & sustained check
+  recent_timestamps: number[]; // timestamps matching recent_bpm_history
+  sustained_above_start: number | null; // timestamp when z first exceeded threshold
   phase_changed_at: number | null;
 }
 
@@ -67,6 +70,9 @@ export type ReasonCode =
   | 'REJECTED_LOW_Z_SCORE'
   | 'REJECTED_NOISE'
   | 'REJECTED_BPM_TOO_HIGH'
+  | 'REJECTED_RATE_OF_CHANGE'
+  | 'REJECTED_NOT_SUSTAINED'
+  | 'REJECTED_NO_ACCEL_LOW_CONFIDENCE'
   | 'ACCEPTED_VALID_REACTION'
   | 'ACCEPTED_STRONG_REACTION';
 
@@ -105,6 +111,14 @@ export interface EngineConfig {
   resting_weight_initial: number;
   resting_weight_final: number;
   weight_transition_sec: number;
+  // Anti-false-positive filters
+  rate_of_change_max: number;        // max Δbpm per reading before rejection
+  rate_of_change_window: number;     // how many recent readings to check
+  sustained_duration_sec: number;    // min seconds z must stay above threshold
+  sustained_min_readings: number;    // min consecutive readings above threshold
+  no_accel_z_penalty: number;        // raise z_threshold by this when no accelerometer
+  no_accel_sustained_multiplier: number; // multiply sustained requirements when no accel
+  recent_history_size: number;       // size of recent_bpm_history buffer
 }
 
 export const DEFAULT_CONFIG: EngineConfig = {
@@ -115,11 +129,19 @@ export const DEFAULT_CONFIG: EngineConfig = {
   signal_quality_threshold: 0.5,
   variance_window_size: 10,
   variance_threshold: 4,
-  learning_duration_sec: 90, // 60-120 range, use 90
-  learning_min_readings: 40, // 30-50 range, use 40
-  baseline_drift_threshold: 15, // bpm difference to trigger warning
-  accelerometer_threshold: 1.5, // m/s² above which = movement
+  learning_duration_sec: 90,
+  learning_min_readings: 40,
+  baseline_drift_threshold: 15,
+  accelerometer_threshold: 1.5,
   resting_weight_initial: 0.9,
   resting_weight_final: 0.2,
-  weight_transition_sec: 150, // ~2.5 min to fully transition
+  weight_transition_sec: 150,
+  // Anti-false-positive
+  rate_of_change_max: 5,          // reject if |Δbpm| > 5 in recent window
+  rate_of_change_window: 3,       // check last 3 readings
+  sustained_duration_sec: 8,      // must hold for 8 seconds
+  sustained_min_readings: 4,      // at least 4 consecutive readings above threshold
+  no_accel_z_penalty: 1.0,
+  no_accel_sustained_multiplier: 5.0, // need 20 consecutive + 40s without accel
+  recent_history_size: 20,        // keep last 20 readings
 };
