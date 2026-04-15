@@ -140,6 +140,7 @@ export const DEFAULT_CONFIG: EngineConfig = {
   rate_of_change_window: 3,       // check last 3 readings
   sustained_duration_sec: 8,      // must hold for 8 seconds
   sustained_min_readings: 4,      // at least 4 consecutive readings above threshold
-  no_accel_z_penalty: 1.0,        // +1.0 to z_threshold when no accelerometer data
-  recent_history_size: 10,        // keep last 10 readings
+  no_accel_z_penalty: 2.0,        // +2.0 to z_threshold when no accelerometer data
+  no_accel_sustained_multiplier: 2.0, // multiply sustained requirements when no accel
+  recent_history_size: 15,        // keep last 15 readings for better sustained check
 };
