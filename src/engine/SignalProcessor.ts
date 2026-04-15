@@ -159,6 +159,23 @@ function checkRateOfChange(session: SessionState, config: EngineConfig): boolean
   return false;
 }
 
+// ─── NEW: Monotonic Climb Detector (physical activity without accel) ───
+
+function isMonotonicClimb(session: SessionState, config: EngineConfig): boolean {
+  const hist = session.recent_bpm_history;
+  if (hist.length < 8) return false;
+  const recent = hist.slice(-8);
+  // Check if trend is consistently upward: each 2-reading avg > previous
+  let upCount = 0;
+  for (let i = 2; i < recent.length; i += 2) {
+    const prev = (recent[i - 2] + recent[i - 1]) / 2;
+    const curr = (recent[i] + (recent[i + 1] ?? recent[i])) / 2;
+    if (curr > prev + 0.5) upCount++;
+  }
+  // If 3+ out of ~3-4 pairs are climbing, it's monotonic
+  return upCount >= 3;
+}
+
 // ─── NEW: Sustained Duration Check ───
 
 function checkSustained(session: SessionState, z: number, config: EngineConfig): boolean {
