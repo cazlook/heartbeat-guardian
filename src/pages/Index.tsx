@@ -31,6 +31,9 @@ const Index = () => {
           <p>Source: {result?.data?.source}</p>
           <p>Samples: {result?.data?.resting_hr_history.length}</p>
         </div>
+        <a href="/debug" className="inline-block text-sm text-primary underline">
+          Apri schermata Debug →
+        </a>
       </Card>
     </div>
   );
