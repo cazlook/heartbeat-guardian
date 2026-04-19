@@ -59,6 +59,14 @@ interface RevealState {
   cardiacScore: number;
 }
 
+interface DebugEvent {
+  t: number;
+  bpm: number;
+  z: number | null;
+  decision: string;
+  reason: string;
+}
+
 const Discovery = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
