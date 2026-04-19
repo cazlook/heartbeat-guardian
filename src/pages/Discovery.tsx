@@ -167,6 +167,25 @@ const Discovery = () => {
       if (error) {
         // Don't toast: surface only via console. The detection animation already gave feedback.
         console.warn('[Discovery] insert reaction failed', error.message);
+        return;
+      }
+
+      // Check bilateral match
+      if (revealedPairRef.current.has(profileId)) return;
+      try {
+        const { data, error: fnErr } = await supabase.functions.invoke('check-match', {
+          body: { viewer_id: user.id, profile_id: profileId },
+        });
+        if (fnErr) {
+          console.warn('[Discovery] check-match failed', fnErr.message);
+          return;
+        }
+        if (data?.matched && data.match_id) {
+          revealedPairRef.current.add(profileId);
+          setReveal({ matchId: data.match_id, cardiacScore: Number(data.cardiac_score ?? 0) });
+        }
+      } catch (e) {
+        console.warn('[Discovery] check-match exception', e);
       }
     },
     [user],
