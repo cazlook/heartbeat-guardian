@@ -39,7 +39,7 @@ const IS_DEV = import.meta.env.DEV;
 // In dev mode, shorten the learning phase so the debug panel can produce
 // meaningful decisions without waiting 90s of wall-clock time.
 const ENGINE_CONFIG: EngineConfig = IS_DEV
-  ? { ...DEFAULT_CONFIG, learning_duration_sec: 0, learning_min_readings: 12 }
+  ? { ...DEFAULT_CONFIG, learning_duration_sec: 0, learning_min_readings: 12, variance_threshold: 20 }
   : DEFAULT_CONFIG;
 
 interface ProfileCard {
