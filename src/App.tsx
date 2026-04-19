@@ -11,7 +11,7 @@ import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
 import Discovery from "./pages/Discovery.tsx";
 import Matches from "./pages/Matches.tsx";
-import ChatPlaceholder from "./pages/ChatPlaceholder.tsx";
+import Chat from "./pages/Chat.tsx";
 import ProfileSetup from "./pages/ProfileSetup.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
