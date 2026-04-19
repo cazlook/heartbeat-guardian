@@ -190,7 +190,6 @@ const Discovery = () => {
   // ── Persist a reaction (debounced per profile) ─────────────────────
   const persistReaction = useCallback(
     async (profileId: string, reading: ReadingLog, peakBpm: number, durationMs: number) => {
-      console.log('[Discovery] persistReaction called', profileId);
       if (!user || reading.z_score == null) return;
       const now = Date.now();
       const last = lastWriteRef.current.get(profileId) ?? 0;
@@ -216,19 +215,9 @@ const Discovery = () => {
       });
       if (error) {
         // Don't toast: surface only via console. The detection animation already gave feedback.
-        console.warn('[Discovery] insert reaction failed', error.message, error);
+        console.warn('[Discovery] insert reaction failed', error.message);
         return;
       }
-      // TEMP DEBUG: confirm insert success
-      console.log('[Discovery] ✅ reaction inserted', {
-        profile_id: profileId,
-        viewer_id: user.id,
-        z_score: reading.z_score,
-        peak_bpm: peakBpm,
-        intensity,
-        confidence,
-        duration_ms: Math.max(0, Math.round(durationMs)),
-      });
 
       // Check bilateral match
       if (revealedPairRef.current.has(profileId)) return;
@@ -278,7 +267,6 @@ const Discovery = () => {
     }
 
     const win = reactionWindowRef.current;
-    console.log('[Discovery] handleSample decision', { bpm: sample.bpm, decision: reading.decision, reason: reading.reason_code, z: reading.z_score, profile: targetProfile });
     if (reading.decision === 'ACCEPTED') {
       if (!win || win.profileId !== targetProfile) {
         reactionWindowRef.current = {
