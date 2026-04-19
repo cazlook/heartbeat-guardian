@@ -577,18 +577,39 @@ const Discovery = () => {
     );
   }
 
+  const openDetail = (p: ProfileCard) => {
+    setSelectedProfile({
+      id: p.id,
+      name: p.name ?? 'Senza nome',
+      age: p.age,
+      bio: p.bio,
+      photos: p.photos,
+      interests: p.interests,
+      distance_km: p.distance_km ?? null,
+    });
+    setDetailOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 backdrop-blur bg-background/80 border-b">
+      <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/70 border-b border-border/50">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-bold">Discovery</h1>
+          <h1 className="text-lg font-bold tracking-tight flex items-center gap-2">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-cardiac shadow-elegant">
+              <Heart className="h-3.5 w-3.5 fill-current text-primary-foreground" />
+            </span>
+            <span className="text-gradient-cardiac">HeartSync</span>
+          </h1>
           <div className="flex items-center gap-1">
+            <Button size="sm" variant="ghost" onClick={() => setEditOpen(true)} aria-label="Modifica profilo">
+              <UserCog className="h-4 w-4" />
+            </Button>
             <Button asChild size="sm" variant="ghost" className="relative">
               <Link to="/matches">
                 Matches
                 {unseenMatches > 0 && (
                   <span
-                    className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center"
+                    className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-elegant"
                     aria-label={`${unseenMatches} nuovi match`}
                   >
                     {unseenMatches > 9 ? '9+' : unseenMatches}
@@ -603,7 +624,7 @@ const Discovery = () => {
         </div>
       </header>
 
-      <main className="max-w-md mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-md mx-auto px-4 py-6 space-y-5">
         {profiles.length === 0 ? (
           <Card className="p-6 text-center text-sm text-muted-foreground">
             Nessun nuovo profilo per ora. Torna più tardi.
@@ -616,10 +637,18 @@ const Discovery = () => {
               ref={setCardRef(p.id)}
               isActive={activeProfileId === p.id}
               isPulsing={pulseProfileId === p.id}
+              onOpenDetail={() => openDetail(p)}
             />
           ))
         )}
       </main>
+
+      <ProfileDetailSheet
+        profile={selectedProfile}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
+      <EditOwnProfileSheet open={editOpen} onOpenChange={setEditOpen} />
 
       {reveal && (
         <div
