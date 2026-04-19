@@ -192,7 +192,30 @@ const Discovery = () => {
         setLoading(false);
         return;
       }
-      setProfiles((list ?? []) as ProfileCard[]);
+
+      const realProfiles: ProfileCard[] = (list ?? []).map((p) => ({
+        id: p.id,
+        name: p.name,
+        age: p.age,
+        bio: p.bio,
+        photos: p.photos ?? [],
+        isMock: false,
+      }));
+
+      // Merge: mock first (so they're visible immediately on first load even
+      // if the DB has no other candidates), real after.
+      const mockAsCards: ProfileCard[] = MOCK_PROFILES.map((m) => ({
+        id: m.id,
+        name: m.name,
+        age: m.age,
+        bio: m.bio,
+        photos: m.photos,
+        interests: m.interests,
+        distance_km: m.distance_km,
+        isMock: true,
+      }));
+
+      setProfiles([...mockAsCards, ...realProfiles]);
       setLoading(false);
     })();
 
