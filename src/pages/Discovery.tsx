@@ -70,6 +70,7 @@ interface DebugEvent {
 const Discovery = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const userId = user?.id ?? null;
 
   const [profiles, setProfiles] = useState<ProfileCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,6 +84,7 @@ const Discovery = () => {
   const [debugLog, setDebugLog] = useState<DebugEvent[]>([]);
 
   const sessionRef = useRef<SessionState | null>(null);
+  const sessionOwnerRef = useRef<string | null>(null);
   const pollerRef = useRef<HeartRatePoller | null>(null);
   const activeProfileRef = useRef<string | null>(null);
   const reactionWindowRef = useRef<{
@@ -97,42 +99,47 @@ const Discovery = () => {
 
   // ── Load profiles & bootstrap session ──────────────────────────────
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     let cancelled = false;
 
     (async () => {
+      if (!sessionRef.current || sessionOwnerRef.current !== userId) {
+        const { data: me } = await supabase
+          .from('profiles')
+          .select('baseline_mean, baseline_std')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (cancelled) return;
+
+        const restingHr = me?.baseline_mean ?? 70;
+        const restingHrStd = me?.baseline_std ?? null;
+        const watchData: SmartWatchData = {
+          source: 'healthkit',
+          resting_hr: Number(restingHr),
+          resting_hr_history: [],
+          avg_resting_hr: Number(restingHr),
+          std_resting_hr: restingHrStd != null ? Number(restingHrStd) : null,
+          retrieved_at: Date.now(),
+        };
+
+        sessionRef.current = createSession(watchData);
+        sessionOwnerRef.current = userId;
+      }
+
       // 1. Existing matches → exclude those users
       const { data: matches, error: mErr } = await supabase
         .from('matches')
         .select('user_a, user_b')
-        .or(`user_a.eq.${user.id},user_b.eq.${user.id}`);
+        .or(`user_a.eq.${userId},user_b.eq.${userId}`);
       if (mErr) {
         toast({ title: 'Errore caricamento match', description: mErr.message, variant: 'destructive' });
       }
-      const excluded = new Set<string>([user.id]);
+      const excluded = new Set<string>([userId]);
       (matches ?? []).forEach((m) => {
         excluded.add(m.user_a);
         excluded.add(m.user_b);
       });
-
-      // 2. Current user profile → baseline + default values for createSession
-      const { data: me } = await supabase
-        .from('profiles')
-        .select('baseline_mean, baseline_std')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      const restingHr = me?.baseline_mean ?? 70;
-      const restingHrStd = me?.baseline_std ?? null;
-      const watchData: SmartWatchData = {
-        source: 'healthkit',
-        resting_hr: Number(restingHr),
-        resting_hr_history: [],
-        avg_resting_hr: Number(restingHr),
-        std_resting_hr: restingHrStd != null ? Number(restingHrStd) : null,
-        retrieved_at: Date.now(),
-      };
-      sessionRef.current = createSession(watchData);
 
       // 3. Candidate profiles
       const { data: list, error: pErr } = await supabase
@@ -153,7 +160,7 @@ const Discovery = () => {
     })();
 
     return () => { cancelled = true; };
-  }, [user]);
+  }, [userId]);
 
   // ── Persist a reaction (debounced per profile) ─────────────────────
   const persistReaction = useCallback(
@@ -267,7 +274,6 @@ const Discovery = () => {
   // object or on `persistReaction` would re-run this effect on every render
   // (auth context returns a new user object each render), continuously
   // stopping/starting the poller.
-  const userId = user?.id ?? null;
   useEffect(() => {
     if (!userId) return;
     const poller = new HeartRatePoller({ intervalMs: 5000 });
@@ -443,11 +449,11 @@ const Discovery = () => {
 
   // ── Debug: reset session from scratch ──────────────────────────────
   const resetDebugSession = useCallback(async () => {
-    if (!user) return;
+    if (!userId) return;
     const { data: me } = await supabase
       .from('profiles')
       .select('baseline_mean, baseline_std')
-      .eq('id', user.id)
+      .eq('id', userId)
       .maybeSingle();
     const restingHr = me?.baseline_mean ?? 70;
     const restingHrStd = me?.baseline_std ?? null;
@@ -460,11 +466,12 @@ const Discovery = () => {
       retrieved_at: Date.now(),
     };
     sessionRef.current = createSession(watchData);
+    sessionOwnerRef.current = userId;
     reactionWindowRef.current = null;
     lastWriteRef.current.clear();
     setDebugLog([]);
     console.log('[Discovery] session reset');
-  }, [user]);
+  }, [userId]);
 
   // ── Render ─────────────────────────────────────────────────────────
   if (loading) {
