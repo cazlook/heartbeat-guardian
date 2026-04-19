@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Heart, Shield, Activity, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { readSmartWatch, isHealthAvailable, type HealthBridgeResult } from '@/engine/healthBridge';
+import { Capacitor } from '@capacitor/core';
+import { readSmartWatch, readRestingHrLast3Days, isHealthAvailable, type HealthBridgeResult } from '@/engine/healthBridge';
 import { createSession } from '@/engine';
 import type { SessionState } from '@/engine/types';
 
