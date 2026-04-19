@@ -48,6 +48,7 @@ const IS_DEV =
 const ENGINE_CONFIG: EngineConfig = IS_DEV
   ? { ...DEFAULT_CONFIG, learning_duration_sec: 0, learning_min_readings: 12, variance_threshold: 20 }
   : DEFAULT_CONFIG;
+console.log('[Discovery] ENGINE_CONFIG active:', JSON.stringify(ENGINE_CONFIG), 'IS_DEV:', IS_DEV);
 
 interface ProfileCard {
   id: string;
