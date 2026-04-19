@@ -421,6 +421,91 @@ const Discovery = () => {
           </div>
         </div>
       )}
+
+      {IS_DEV && (
+        <>
+          <button
+            type="button"
+            onClick={() => setDebugOpen((v) => !v)}
+            className="fixed bottom-4 right-4 z-40 h-11 w-11 rounded-full bg-secondary text-secondary-foreground shadow-lg flex items-center justify-center border border-border"
+            aria-label="Debug"
+          >
+            <Bug className="h-4 w-4" />
+          </button>
+          {debugOpen && (
+            <div className="fixed bottom-20 right-4 z-40 w-[320px] max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-card text-card-foreground shadow-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Debug — fake BPM
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  active: {activeProfileId ? '✓' : '—'}
+                </span>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs text-muted-foreground">BPM</span>
+                  <span className="text-sm font-mono font-semibold">{debugBpm}</span>
+                </div>
+                <Slider
+                  value={[debugBpm]}
+                  min={50}
+                  max={140}
+                  step={1}
+                  onValueChange={(v) => setDebugBpm(v[0])}
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="w-full mt-2"
+                  onClick={() => injectDebugBpm(debugBpm)}
+                  disabled={!activeProfileId}
+                >
+                  Inietta {debugBpm} BPM
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-4 gap-1.5">
+                <Button size="sm" variant="outline" onClick={() => injectDebugBpm(70)} disabled={!activeProfileId}>
+                  70
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => injectDebugBpm(82)} disabled={!activeProfileId}>
+                  82
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => injectDebugBpm(95)} disabled={!activeProfileId}>
+                  95
+                </Button>
+                <Button size="sm" variant="outline" onClick={triggerSpike} disabled={!activeProfileId}>
+                  Spike
+                </Button>
+              </div>
+
+              <div>
+                <div className="text-xs text-muted-foreground mb-1.5">Last 10 events</div>
+                <div className="max-h-48 overflow-y-auto rounded border border-border bg-muted/30 text-[11px] font-mono">
+                  {debugLog.length === 0 ? (
+                    <div className="p-2 text-muted-foreground">Nessun evento</div>
+                  ) : (
+                    debugLog.map((e) => (
+                      <div
+                        key={e.t}
+                        className={`px-2 py-1 border-b border-border/50 last:border-0 flex justify-between gap-2 ${
+                          e.decision === 'ACCEPTED' ? 'text-primary' : ''
+                        }`}
+                      >
+                        <span>{e.bpm}bpm</span>
+                        <span>z={e.z != null ? e.z.toFixed(2) : '—'}</span>
+                        <span className="truncate">{e.reason.replace(/^(ACCEPTED_|REJECTED_)/, '')}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };
