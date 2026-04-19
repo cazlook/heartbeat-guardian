@@ -14,11 +14,12 @@
  * `DEFAULT_CONFIG`.
  */
 
-import { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
-import { Heart, Loader2, LogOut, Bug } from 'lucide-react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Heart, Loader2, LogOut, Bug, MapPin, UserCog, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -34,6 +35,9 @@ import {
 import { HeartRatePoller, type LiveHrSample } from '@/engine/heartRatePoller';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMatchReveal } from '@/components/MatchRevealProvider';
+import { MOCK_PROFILES, MockBpmSimulator, isMockProfileId } from '@/data/mockProfiles';
+import { ProfileDetailSheet, type ProfileDetail } from '@/components/ProfileDetailSheet';
+import { EditOwnProfileSheet } from '@/components/EditOwnProfileSheet';
 
 // Debug mode: active in Vite dev OR when ?debug=1 is in the URL.
 // The Lovable preview serves a production build, so import.meta.env.DEV
@@ -67,6 +71,9 @@ interface ProfileCard {
   age: number | null;
   bio: string | null;
   photos: string[];
+  interests?: string[];
+  distance_km?: number | null;
+  isMock?: boolean;
 }
 
 type Intensity = 'low' | 'medium' | 'high';
@@ -104,6 +111,9 @@ const Discovery = () => {
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [pulseProfileId, setPulseProfileId] = useState<string | null>(null);
   const [reveal, setReveal] = useState<RevealState | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<ProfileDetail | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   // Debug-only state (rendered only when IS_DEV)
   const [debugOpen, setDebugOpen] = useState(false);
@@ -182,7 +192,30 @@ const Discovery = () => {
         setLoading(false);
         return;
       }
-      setProfiles((list ?? []) as ProfileCard[]);
+
+      const realProfiles: ProfileCard[] = (list ?? []).map((p) => ({
+        id: p.id,
+        name: p.name,
+        age: p.age,
+        bio: p.bio,
+        photos: p.photos ?? [],
+        isMock: false,
+      }));
+
+      // Merge: mock first (so they're visible immediately on first load even
+      // if the DB has no other candidates), real after.
+      const mockAsCards: ProfileCard[] = MOCK_PROFILES.map((m) => ({
+        id: m.id,
+        name: m.name,
+        age: m.age,
+        bio: m.bio,
+        photos: m.photos,
+        interests: m.interests,
+        distance_km: m.distance_km,
+        isMock: true,
+      }));
+
+      setProfiles([...mockAsCards, ...realProfiles]);
       setLoading(false);
     })();
 
@@ -193,6 +226,9 @@ const Discovery = () => {
   const persistReaction = useCallback(
     async (profileId: string, reading: ReadingLog, peakBpm: number, durationMs: number) => {
       if (!user || reading.z_score == null) return;
+      // Mock profiles non vivono nel DB → niente persist, niente check-match.
+      // L'animazione di pulse parte comunque per dare feedback visivo.
+      if (isMockProfileId(profileId)) return;
       const now = Date.now();
       const last = lastWriteRef.current.get(profileId) ?? 0;
       if (now - last < REACTION_COOLDOWN_MS) return;
@@ -317,6 +353,35 @@ const Discovery = () => {
       pollerRef.current = null;
     };
   }, [userId]);
+
+  // ── Mock BPM simulator ─────────────────────────────────────────────
+  // Per ogni profilo mock simula un BPM "del viewer" che fluttua attorno a
+  // bpm_baseline ± 5..15. Quando la card mock è attiva, iniettiamo questi
+  // valori nel pipeline come se fossero il nostro HR live (così l'engine
+  // produce decisioni varie e card diverse generano reazioni diverse).
+  // I profili reali continuano a usare il poller HealthKit/HC standard.
+  const mockSimulator = useMemo(() => new MockBpmSimulator(MOCK_PROFILES, 1000), []);
+  useEffect(() => {
+    mockSimulator.start();
+    const id = window.setInterval(() => {
+      const active = activeProfileRef.current;
+      if (!active || !isMockProfileId(active)) return;
+      const bpm = mockSimulator.getBpm(active);
+      if (bpm == null) return;
+      const now = Date.now();
+      handleSampleRef.current?.({
+        bpm: Math.round(bpm),
+        sampleTime: now,
+        receivedAt: now,
+        latencyMs: 0,
+        source: 'mock',
+      });
+    }, 1500);
+    return () => {
+      window.clearInterval(id);
+      mockSimulator.stop();
+    };
+  }, [mockSimulator]);
 
   // ── Track which card is in view (intersection observer) ────────────
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -512,18 +577,39 @@ const Discovery = () => {
     );
   }
 
+  const openDetail = (p: ProfileCard) => {
+    setSelectedProfile({
+      id: p.id,
+      name: p.name ?? 'Senza nome',
+      age: p.age,
+      bio: p.bio,
+      photos: p.photos,
+      interests: p.interests,
+      distance_km: p.distance_km ?? null,
+    });
+    setDetailOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 backdrop-blur bg-background/80 border-b">
+      <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/70 border-b border-border/50">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-bold">Discovery</h1>
+          <h1 className="text-lg font-bold tracking-tight flex items-center gap-2">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-cardiac shadow-elegant">
+              <Heart className="h-3.5 w-3.5 fill-current text-primary-foreground" />
+            </span>
+            <span className="text-gradient-cardiac">HeartSync</span>
+          </h1>
           <div className="flex items-center gap-1">
+            <Button size="sm" variant="ghost" onClick={() => setEditOpen(true)} aria-label="Modifica profilo">
+              <UserCog className="h-4 w-4" />
+            </Button>
             <Button asChild size="sm" variant="ghost" className="relative">
               <Link to="/matches">
                 Matches
                 {unseenMatches > 0 && (
                   <span
-                    className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center"
+                    className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-elegant"
                     aria-label={`${unseenMatches} nuovi match`}
                   >
                     {unseenMatches > 9 ? '9+' : unseenMatches}
@@ -538,7 +624,7 @@ const Discovery = () => {
         </div>
       </header>
 
-      <main className="max-w-md mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-md mx-auto px-4 py-6 space-y-5">
         {profiles.length === 0 ? (
           <Card className="p-6 text-center text-sm text-muted-foreground">
             Nessun nuovo profilo per ora. Torna più tardi.
@@ -551,10 +637,18 @@ const Discovery = () => {
               ref={setCardRef(p.id)}
               isActive={activeProfileId === p.id}
               isPulsing={pulseProfileId === p.id}
+              onOpenDetail={() => openDetail(p)}
             />
           ))
         )}
       </main>
+
+      <ProfileDetailSheet
+        profile={selectedProfile}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
+      <EditOwnProfileSheet open={editOpen} onOpenChange={setEditOpen} />
 
       {reveal && (
         <div
@@ -701,54 +795,102 @@ interface ProfileCardViewProps {
   profile: ProfileCard;
   isActive: boolean;
   isPulsing: boolean;
+  onOpenDetail: () => void;
 }
 
 const ProfileCardView = forwardRef<HTMLDivElement, ProfileCardViewProps>(({
   profile,
   isActive,
   isPulsing,
+  onOpenDetail,
 }, ref) => {
   const photo = profile.photos?.[0];
   return (
     <div ref={ref} data-profile-id={profile.id}>
       <Card
-        className={`relative overflow-hidden transition-shadow ${
-          isActive ? 'shadow-lg' : 'shadow-sm'
+        className={`group relative overflow-hidden cursor-pointer border-border/50 bg-gradient-surface shadow-soft transition-all duration-300 hover:border-border ${
+          isActive ? 'shadow-elegant ring-1 ring-primary/30 scale-[1.005]' : ''
         }`}
+        onClick={onOpenDetail}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onOpenDetail();
+          }
+        }}
       >
         <div className="aspect-[3/4] bg-muted relative">
           {photo ? (
-            <img src={photo} alt={profile.name ?? 'Profilo'} className="w-full h-full object-cover" />
+            <img
+              src={photo}
+              alt={profile.name ?? 'Profilo'}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+              loading="lazy"
+            />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-secondary">
               Nessuna foto
             </div>
           )}
-          {/* Heartbeat pulse — discreet feedback only */}
+
+          {/* Distance pill */}
+          {profile.distance_km != null && (
+            <div className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-background/60 backdrop-blur-md text-[11px] font-medium border border-border/40">
+              <MapPin className="h-3 w-3" />
+              <span>{profile.distance_km} km</span>
+            </div>
+          )}
+
+          {/* Heartbeat pulse */}
           <div
-            className={`absolute top-3 right-3 transition-opacity ${
+            className={`absolute top-3 right-3 transition-opacity duration-300 ${
               isPulsing ? 'opacity-100' : 'opacity-0'
             }`}
             aria-hidden
           >
-            <span className="relative flex h-10 w-10 items-center justify-center">
+            <span className="relative flex h-11 w-11 items-center justify-center">
               <span className="absolute inline-flex h-full w-full rounded-full bg-primary/40 animate-ping" />
-              <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/80 backdrop-blur">
-                <Heart className="h-5 w-5 text-primary-foreground fill-current" />
+              <span className="relative inline-flex h-11 w-11 items-center justify-center rounded-full bg-gradient-cardiac shadow-elegant">
+                <Heart className="h-5 w-5 text-primary-foreground fill-current heartbeat" />
               </span>
             </span>
           </div>
-          <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-background/95 via-background/70 to-transparent">
-            <h2 className="text-xl font-bold">
-              {profile.name ?? 'Senza nome'}
-              {profile.age != null && (
-                <span className="font-normal text-muted-foreground"> · {profile.age}</span>
+
+          {/* Bottom overlay with name + interests */}
+          <div className="absolute bottom-0 inset-x-0 p-5 pt-16 bg-gradient-overlay">
+            <div className="flex items-end justify-between gap-3">
+              <h2 className="text-2xl font-bold tracking-tight text-foreground">
+                {profile.name ?? 'Senza nome'}
+                {profile.age != null && (
+                  <span className="font-light text-foreground/70"> · {profile.age}</span>
+                )}
+              </h2>
+              {isActive && (
+                <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-primary font-semibold">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-glow" />
+                  Live
+                </span>
               )}
-            </h2>
+            </div>
+            {profile.interests && profile.interests.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {profile.interests.slice(0, 3).map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="rounded-full text-[10px] px-2 py-0.5 bg-background/50 backdrop-blur border border-border/40 font-medium"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         {profile.bio && (
-          <div className="p-4 text-sm text-muted-foreground whitespace-pre-wrap">
+          <div className="p-5 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
             {profile.bio}
           </div>
         )}
