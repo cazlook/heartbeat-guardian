@@ -1,8 +1,25 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Heart, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Loader2, MessageSquare, CalendarHeart } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from '@/components/ui/sheet';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -19,11 +36,48 @@ interface MatchRow {
   } | null;
 }
 
+interface InviteState {
+  matchId: string;
+  name: string;
+  type: string;
+  day: string;
+  slot: string;
+  area: string;
+}
+
+const formatRelative = (iso: string): string => {
+  const then = new Date(iso).getTime();
+  const now = Date.now();
+  const diffMs = now - then;
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  // Compare calendar days
+  const dayThen = new Date(iso); dayThen.setHours(0, 0, 0, 0);
+  const dayNow = new Date(); dayNow.setHours(0, 0, 0, 0);
+  const dayDiff = Math.round((dayNow.getTime() - dayThen.getTime()) / dayMs);
+
+  if (dayDiff <= 0) return 'Oggi';
+  if (dayDiff === 1) return 'Ieri';
+  if (dayDiff < 7) return `${dayDiff} giorni fa`;
+  if (dayDiff < 30) {
+    const w = Math.floor(dayDiff / 7);
+    return w === 1 ? '1 settimana fa' : `${w} settimane fa`;
+  }
+  if (dayDiff < 365) {
+    const m = Math.floor(dayDiff / 30);
+    return m === 1 ? '1 mese fa' : `${m} mesi fa`;
+  }
+  const y = Math.floor(dayDiff / 365);
+  return y === 1 ? '1 anno fa' : `${y} anni fa`;
+};
+
 const Matches = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { markAllSeen } = useMatchReveal();
   const [loading, setLoading] = useState(true);
   const [matches, setMatches] = useState<MatchRow[]>([]);
+  const [invite, setInvite] = useState<InviteState | null>(null);
 
   useEffect(() => {
     markAllSeen();
@@ -83,9 +137,30 @@ const Matches = () => {
     return () => { cancelled = true; };
   }, [user]);
 
+  const openInvite = (m: MatchRow) => {
+    setInvite({
+      matchId: m.id,
+      name: m.other?.name ?? 'questa persona',
+      type: 'caffè',
+      day: 'venerdì',
+      slot: '19:00 – 21:00',
+      area: '',
+    });
+  };
+
+  const sendInvite = () => {
+    if (!invite) return;
+    toast({
+      title: 'Invito pronto',
+      description: `${invite.type} · ${invite.day} · ${invite.slot}${invite.area ? ` · ${invite.area}` : ''}`,
+    });
+    setInvite(null);
+  };
+
   return (
     <div className="min-h-screen p-6 bg-background">
       <div className="max-w-xl mx-auto space-y-6">
+        {/* Header — invariato */}
         <div className="flex items-end justify-between border-b border-border/60 pb-4">
           <div>
             <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
@@ -105,20 +180,39 @@ const Matches = () => {
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
         ) : matches.length === 0 ? (
-          <div className="border border-border/60 rounded-sm p-8 text-center text-sm text-muted-foreground italic">
-            Nessun match per ora.<br />
-            Continua a esplorare in Discovery.
+          <div className="border border-border/60 rounded-sm py-16 px-8 text-center space-y-3">
+            <p className="font-display text-2xl text-foreground italic leading-tight">
+              Il tuo cuore non ha ancora reagito.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Continua a scoprire profili.
+            </p>
+            <div className="pt-3">
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="rounded-sm uppercase tracking-wider text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+              >
+                <Link to="/discovery">Vai a Discovery</Link>
+              </Button>
+            </div>
           </div>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {matches.map((m) => {
               const photo = m.other?.photos?.[0];
               const name = m.other?.name ?? 'Senza nome';
+              const scoreInt = Math.round(m.cardiac_score);
+              const barPct = Math.max(0, Math.min(100, scoreInt));
+              const when = formatRelative(m.created_at);
+
               return (
                 <li key={m.id}>
-                  <Link to={`/chat/${m.id}`} className="block group">
-                    <Card className="rounded-sm p-4 flex items-center gap-4 bg-card border border-border/60 group-hover:border-primary/40 transition-colors">
-                      <div className="h-14 w-14 rounded-sm overflow-hidden bg-muted shrink-0">
+                  <Card className="rounded-sm p-4 bg-card border border-border/60 hover:border-primary/40 transition-colors space-y-4">
+                    {/* Top row */}
+                    <div className="flex items-start gap-4">
+                      <div className="h-16 w-16 rounded-sm overflow-hidden bg-muted shrink-0">
                         {photo ? (
                           <img
                             src={photo}
@@ -131,30 +225,159 @@ const Matches = () => {
                           </div>
                         )}
                       </div>
+
                       <div className="flex-1 min-w-0">
-                        <div className="font-display text-xl text-foreground truncate leading-tight">
-                          {name}
+                        <div className="flex items-baseline justify-between gap-3">
+                          <div className="font-display text-2xl text-foreground truncate leading-tight">
+                            {name}
+                          </div>
+                          <span className="font-mono-bpm text-3xl text-primary leading-none shrink-0">
+                            {scoreInt}
+                          </span>
                         </div>
-                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5">
-                          {new Date(m.created_at).toLocaleDateString()}
+                        <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mt-1">
+                          {when}
+                        </div>
+
+                        {/* Cardiac progress bar — ambra */}
+                        <div className="mt-3">
+                          <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary transition-all duration-700 ease-out"
+                              style={{ width: `${barPct}%` }}
+                              aria-label={`Cardiac score ${scoreInt} su 100`}
+                            />
+                          </div>
+                          <div className="flex justify-between text-[9px] uppercase tracking-[0.2em] text-muted-foreground mt-1.5">
+                            <span>Cardiac</span>
+                            <span className="font-mono-bpm">{scoreInt}/100</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end">
-                        <span className="font-mono-bpm text-2xl text-primary leading-none">
-                          {m.cardiac_score.toFixed(1)}
-                        </span>
-                        <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground mt-1">
-                          Score
-                        </span>
-                      </div>
-                    </Card>
-                  </Link>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <Button
+                        size="sm"
+                        onClick={() => navigate(`/chat/${m.id}`)}
+                        className="flex-1 h-10 rounded-sm bg-primary text-primary-foreground hover:bg-primary/90 uppercase tracking-wider text-[11px] font-medium"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" strokeWidth={1.75} />
+                        Chatta
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openInvite(m)}
+                        className="flex-1 h-10 rounded-sm border-border/70 hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary uppercase tracking-wider text-[11px] font-medium text-foreground/85"
+                      >
+                        <CalendarHeart className="h-3.5 w-3.5" strokeWidth={1.75} />
+                        Invita a uscire
+                      </Button>
+                    </div>
+                  </Card>
                 </li>
               );
             })}
           </ul>
         )}
       </div>
+
+      {/* Invite sheet — inline, mantiene tema noir */}
+      <Sheet open={!!invite} onOpenChange={(o) => !o && setInvite(null)}>
+        <SheetContent side="bottom" className="bg-card border-border/60 rounded-t-sm">
+          <SheetHeader className="text-left">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+              Invito · HeartSync
+            </p>
+            <SheetTitle className="font-display text-3xl text-foreground leading-tight">
+              Invita {invite?.name}
+            </SheetTitle>
+            <SheetDescription className="text-muted-foreground italic">
+              Scegli quando e dove. Il vostro cuore farà il resto.
+            </SheetDescription>
+          </SheetHeader>
+
+          {invite && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Tipo</Label>
+                <Select value={invite.type} onValueChange={(v) => setInvite({ ...invite, type: v })}>
+                  <SelectTrigger className="rounded-sm bg-input/60 border-border h-11">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="caffè">Caffè</SelectItem>
+                    <SelectItem value="aperitivo">Aperitivo</SelectItem>
+                    <SelectItem value="cena">Cena</SelectItem>
+                    <SelectItem value="passeggiata">Passeggiata</SelectItem>
+                    <SelectItem value="cinema">Cinema</SelectItem>
+                    <SelectItem value="concerto">Concerto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Giorno</Label>
+                <Select value={invite.day} onValueChange={(v) => setInvite({ ...invite, day: v })}>
+                  <SelectTrigger className="rounded-sm bg-input/60 border-border h-11">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="oggi">Oggi</SelectItem>
+                    <SelectItem value="domani">Domani</SelectItem>
+                    <SelectItem value="venerdì">Venerdì</SelectItem>
+                    <SelectItem value="sabato">Sabato</SelectItem>
+                    <SelectItem value="domenica">Domenica</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Fascia oraria</Label>
+                <Select value={invite.slot} onValueChange={(v) => setInvite({ ...invite, slot: v })}>
+                  <SelectTrigger className="rounded-sm bg-input/60 border-border h-11">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="11:00 – 13:00">11:00 – 13:00</SelectItem>
+                    <SelectItem value="17:00 – 19:00">17:00 – 19:00</SelectItem>
+                    <SelectItem value="19:00 – 21:00">19:00 – 21:00</SelectItem>
+                    <SelectItem value="21:00 – 23:00">21:00 – 23:00</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Zona</Label>
+                <Input
+                  value={invite.area}
+                  onChange={(e) => setInvite({ ...invite, area: e.target.value })}
+                  placeholder="Es. Trastevere, Navigli…"
+                  className="rounded-sm bg-input/60 border-border focus-visible:ring-primary/40 h-11"
+                />
+              </div>
+            </div>
+          )}
+
+          <SheetFooter className="mt-6 flex-row gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setInvite(null)}
+              className="flex-1 rounded-sm uppercase tracking-wider text-xs text-muted-foreground hover:text-foreground"
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={sendInvite}
+              className="flex-1 rounded-sm bg-primary text-primary-foreground hover:bg-primary/90 uppercase tracking-wider text-xs"
+            >
+              Invia invito
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
