@@ -23,6 +23,7 @@ export interface HealthBridgeResult {
 }
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
 
 // ─── iOS / HealthKit ───
 async function readHealthKit(): Promise<HealthBridgeResult> {
@@ -166,4 +167,71 @@ export async function readSmartWatch(): Promise<HealthBridgeResult> {
 export function isHealthAvailable(): boolean {
   const p = Capacitor.getPlatform();
   return p === 'ios' || p === 'android';
+}
+
+/**
+ * Read RestingHeartRate from Health Connect over the last 3 days, to use
+ * as the engine's initial baseline. Falls back to HeartRate samples if the
+ * RestingHeartRate stream is empty. Web → unavailable.
+ */
+export async function readRestingHrLast3Days(): Promise<HealthBridgeResult> {
+  const platform = Capacitor.getPlatform();
+  if (platform !== 'android') {
+    if (platform === 'ios') return readHealthKit();
+    return { status: 'unavailable', data: null, error: 'Native build required' };
+  }
+
+  try {
+    const HC: any = await import('capacitor-health-connect');
+    const Plugin = HC.HealthConnect ?? HC.default;
+
+    const availability = await Plugin.checkAvailability();
+    if (availability?.availability !== 'Available') {
+      return { status: 'unavailable', data: null, error: 'Health Connect not installed' };
+    }
+
+    const granted = await Plugin.requestHealthPermissions({
+      read: ['RestingHeartRate', 'HeartRate'],
+      write: [],
+    });
+    if (!granted?.grantedPermissions?.length) {
+      return { status: 'denied', data: null, error: 'Permissions denied' };
+    }
+
+    const end = new Date();
+    const start = new Date(end.getTime() - THREE_DAYS_MS);
+    const timeRange = { type: 'between', startTime: start.toISOString(), endTime: end.toISOString() };
+
+    let records: { beatsPerMinute: number; time: string }[] = [];
+    try {
+      const resp = await Plugin.readRecords({ type: 'RestingHeartRate', timeRangeFilter: timeRange });
+      records = (resp?.records ?? []).map((r: any) => ({
+        beatsPerMinute: r.beatsPerMinute ?? r.bpm ?? 0,
+        time: r.time ?? '',
+      }));
+    } catch (e) {
+      log('HC_RESTING_3D_FAIL', { error: String(e) });
+    }
+
+    if (records.length === 0) {
+      const resp = await Plugin.readRecords({ type: 'HeartRate', timeRangeFilter: timeRange });
+      const all: number[] = [];
+      for (const r of resp?.records ?? []) {
+        for (const s of r.samples ?? []) {
+          if (typeof s.beatsPerMinute === 'number') all.push(s.beatsPerMinute);
+        }
+      }
+      records = all.map(bpm => ({ beatsPerMinute: bpm, time: '' }));
+    }
+
+    if (records.length === 0) {
+      return { status: 'denied', data: null, error: 'No heart rate samples in last 3 days' };
+    }
+
+    const data = parseHealthConnect({ restingHeartRateRecord: records });
+    log('HC_BASELINE_3D', { samples: records.length, mean: data.avg_resting_hr, std: data.std_resting_hr });
+    return { status: 'granted', data };
+  } catch (err) {
+    return { status: 'denied', data: null, error: String(err) };
+  }
 }

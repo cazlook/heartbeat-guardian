@@ -32,7 +32,8 @@ import {
   type SessionState,
   type SmartWatchData,
 } from '@/engine';
-import { HeartRatePoller, type LiveHrSample } from '@/engine/heartRatePoller';
+import { type LiveHrSample } from '@/engine/heartRatePoller';
+import { useBiometricSource } from '@/hooks/useBiometricSource';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMatchReveal } from '@/components/MatchRevealProvider';
 import { MOCK_PROFILES, MockBpmSimulator, isMockProfileId } from '@/data/mockProfiles';
@@ -122,7 +123,7 @@ const Discovery = () => {
 
   const sessionRef = useRef<SessionState | null>(null);
   const sessionOwnerRef = useRef<string | null>(null);
-  const pollerRef = useRef<HeartRatePoller | null>(null);
+  // Native HR is now sourced via useBiometricSource (Health Connect / HealthKit).
   const activeProfileRef = useRef<string | null>(null);
   const reactionWindowRef = useRef<{
     profileId: string;
@@ -334,27 +335,14 @@ const Discovery = () => {
   // Keep latest handler accessible to debug panel without re-subscribing poller
   useEffect(() => { handleSampleRef.current = handleSample; }, [handleSample]);
 
-  // ── Heart rate poller wired to engine ──────────────────────────────
-  // IMPORTANT: only depend on `user?.id` (primitive). Depending on the `user`
-  // object or on `persistReaction` would re-run this effect on every render
-  // (auth context returns a new user object each render), continuously
-  // stopping/starting the poller.
-  useEffect(() => {
-    if (!userId) return;
-    const poller = new HeartRatePoller({ intervalMs: 5000 });
-    pollerRef.current = poller;
-
-    const off = poller.on((sample: LiveHrSample) => {
-      handleSampleRef.current?.(sample);
-    });
-
-    poller.start();
-    return () => {
-      off();
-      poller.stop();
-      pollerRef.current = null;
-    };
-  }, [userId]);
+  // ── Native biometric source (Health Connect / HealthKit) ───────────
+  // Routes real BPM samples into the same pipeline used by the mock simulator.
+  // On web/preview the hook is a no-op and the mock simulator below takes over.
+  useBiometricSource({
+    intervalMs: 2000,
+    enabled: !!userId,
+    onSample: (s: LiveHrSample) => handleSampleRef.current?.(s),
+  });
 
   // ── Mock BPM simulator ─────────────────────────────────────────────
   // Per ogni profilo mock simula un BPM "del viewer" che fluttua attorno a

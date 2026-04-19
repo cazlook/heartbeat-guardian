@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Heart, Shield, Activity, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { readSmartWatch, isHealthAvailable, type HealthBridgeResult } from '@/engine/healthBridge';
+import { Capacitor } from '@capacitor/core';
+import { readSmartWatch, readRestingHrLast3Days, isHealthAvailable, type HealthBridgeResult } from '@/engine/healthBridge';
 import { createSession } from '@/engine';
 import type { SessionState } from '@/engine/types';
 
@@ -16,7 +17,9 @@ export const HealthConsent = ({ onReady }: Props) => {
 
   const handleConnect = async () => {
     setLoading(true);
-    const r = await readSmartWatch();
+    const r = Capacitor.getPlatform() === 'android'
+      ? await readRestingHrLast3Days()
+      : await readSmartWatch();
     setResult(r);
     setLoading(false);
     if (r.status === 'granted' && r.data) {
