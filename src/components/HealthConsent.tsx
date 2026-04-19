@@ -17,7 +17,9 @@ export const HealthConsent = ({ onReady }: Props) => {
 
   const handleConnect = async () => {
     setLoading(true);
-    const r = await readSmartWatch();
+    const r = Capacitor.getPlatform() === 'android'
+      ? await readRestingHrLast3Days()
+      : await readSmartWatch();
     setResult(r);
     setLoading(false);
     if (r.status === 'granted' && r.data) {
