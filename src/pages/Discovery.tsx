@@ -14,11 +14,12 @@
  * `DEFAULT_CONFIG`.
  */
 
-import { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
-import { Heart, Loader2, LogOut, Bug } from 'lucide-react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Heart, Loader2, LogOut, Bug, MapPin, UserCog, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -34,6 +35,9 @@ import {
 import { HeartRatePoller, type LiveHrSample } from '@/engine/heartRatePoller';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMatchReveal } from '@/components/MatchRevealProvider';
+import { MOCK_PROFILES, MockBpmSimulator, isMockProfileId } from '@/data/mockProfiles';
+import { ProfileDetailSheet, type ProfileDetail } from '@/components/ProfileDetailSheet';
+import { EditOwnProfileSheet } from '@/components/EditOwnProfileSheet';
 
 // Debug mode: active in Vite dev OR when ?debug=1 is in the URL.
 // The Lovable preview serves a production build, so import.meta.env.DEV
@@ -67,6 +71,9 @@ interface ProfileCard {
   age: number | null;
   bio: string | null;
   photos: string[];
+  interests?: string[];
+  distance_km?: number | null;
+  isMock?: boolean;
 }
 
 type Intensity = 'low' | 'medium' | 'high';
