@@ -11,7 +11,7 @@ import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
 import Discovery from "./pages/Discovery.tsx";
 import Matches from "./pages/Matches.tsx";
-import ChatPlaceholder from "./pages/ChatPlaceholder.tsx";
+import Chat from "./pages/Chat.tsx";
 import ProfileSetup from "./pages/ProfileSetup.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -31,7 +31,7 @@ const App = () => (
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/discovery" element={<ProtectedRoute><Discovery /></ProtectedRoute>} />
             <Route path="/matches" element={<ProtectedRoute><Matches /></ProtectedRoute>} />
-            <Route path="/chat/:matchId" element={<ProtectedRoute><ChatPlaceholder /></ProtectedRoute>} />
+            <Route path="/chat/:matchId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
             <Route path="/profile/setup" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
             <Route path="/debug" element={<ProtectedRoute><Debug /></ProtectedRoute>} />
 
