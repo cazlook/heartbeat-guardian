@@ -352,14 +352,45 @@ const Discovery = () => {
 
 
   // ── Debug: inject a synthetic BPM through the same pipeline ────────
+  // Calls processReading directly (instead of going through the poller) so
+  // we get a synchronous result we can log, and a clear warning when no
+  // profile is active at injection time.
   const injectDebugBpm = useCallback((bpm: number) => {
+    const session = sessionRef.current;
+    const profileId = activeProfileRef.current;
+    if (!session) {
+      console.warn('[Discovery] WARN: no session at inject time');
+      return;
+    }
+    if (!profileId) {
+      console.warn('[Discovery] WARN: no active profile at inject time');
+    }
+
     const now = Date.now();
-    handleSampleRef.current?.({
+    const sample: LiveHrSample = {
       bpm,
       sampleTime: now,
       receivedAt: now,
       latencyMs: 0,
       source: 'mock',
+    };
+
+    // Run the sample through the same handler the poller uses (updates
+    // baseline, debug log, reaction window, persistence, …).
+    handleSampleRef.current?.(sample);
+
+    // Additionally compute a standalone read-only result for explicit logging.
+    const reading = processReading(bpm, session, {
+      app_in_foreground: true,
+      in_discovery_screen: true,
+      signal_quality: 0.9,
+    });
+    console.log('[Discovery] inject result:', {
+      decision: reading.decision,
+      reason: reading.reason_code,
+      zScore: reading.z_score,
+      profileId,
+      bpm,
     });
   }, []);
 
