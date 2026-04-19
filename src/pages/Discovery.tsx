@@ -681,9 +681,11 @@ const Discovery = () => {
             {/* Photo / silhouette — blur in phase 1, sharp in phase 2 */}
             <div className="relative mx-auto h-40 w-40">
               <div
-                className="absolute inset-0 rounded-full overflow-hidden ring-4 ring-primary/40 shadow-[0_0_60px_rgba(255,80,120,0.45)]"
+                className="absolute inset-0 rounded-full overflow-hidden ring-1 ring-primary/40 shadow-[0_0_80px_-10px_hsl(var(--primary)/0.45)]"
                 style={{
-                  filter: revealPhase === 'anonymous' ? 'blur(20px) brightness(0.7)' : 'blur(0px) brightness(1)',
+                  filter: revealPhase === 'anonymous'
+                    ? 'blur(20px) brightness(0.55) grayscale(1)'
+                    : 'blur(0px) brightness(1) grayscale(0)',
                   transition: 'filter 1.2s ease-out',
                 }}
               >
@@ -694,7 +696,7 @@ const Discovery = () => {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="h-full w-full bg-gradient-to-br from-primary/60 to-secondary" />
+                  <div className="h-full w-full bg-gradient-to-br from-primary/40 to-secondary" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
               </div>
@@ -703,7 +705,7 @@ const Discovery = () => {
               {revealPhase === 'anonymous' && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <Heart
-                    className="h-14 w-14 text-primary fill-current drop-shadow-[0_0_12px_rgba(255,80,120,0.9)]"
+                    className="h-14 w-14 text-primary fill-current drop-shadow-[0_0_18px_hsl(var(--primary)/0.85)]"
                     style={{ animation: 'reveal-pulse 1s ease-in-out infinite' }}
                   />
                 </div>
@@ -719,32 +721,38 @@ const Discovery = () => {
             `}</style>
 
             {revealPhase === 'anonymous' ? (
-              <div className="space-y-3 animate-in fade-in duration-500">
-                <p className="text-xl font-semibold leading-snug">
-                  Qualcuno ha reagito a te...
+              <div className="space-y-4 animate-in fade-in duration-500">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+                  Risonanza cardiaca
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  Il vostro battito si è sincronizzato
+                <p className="font-display text-3xl text-foreground leading-tight">
+                  Qualcuno ha reagito a te.
                 </p>
-                <div className="mx-auto h-12 w-12 rounded-full border-2 border-primary/50 flex items-center justify-center">
-                  <span className="text-xl font-bold text-primary tabular-nums">{countdown}</span>
+                <p className="text-sm text-muted-foreground italic">
+                  Il vostro battito si è sincronizzato.
+                </p>
+                <div className="mx-auto h-12 w-12 rounded-full border border-primary/40 flex items-center justify-center">
+                  <span className="text-xl font-display text-primary tabular-nums">{countdown}</span>
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="space-y-1">
-                  <p className="text-2xl font-bold leading-snug">
+              <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="space-y-2">
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+                    Match rivelato
+                  </p>
+                  <p className="font-display text-4xl text-foreground leading-tight">
                     {reveal.name ?? 'Match anonimo'}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    I vostri cuori hanno reagito allo stesso modo
+                  <p className="text-sm text-muted-foreground italic">
+                    I vostri cuori hanno reagito allo stesso modo.
                   </p>
                 </div>
                 <div>
-                  <p className="text-4xl font-bold text-primary tabular-nums">
+                  <p className="font-display text-5xl text-primary tabular-nums leading-none">
                     {reveal.cardiacScore.toFixed(1)}
                   </p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-[0.25em] mt-2">
                     Cardiac score
                   </p>
                 </div>
