@@ -114,6 +114,8 @@ const Discovery = () => {
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [pulseProfileId, setPulseProfileId] = useState<string | null>(null);
   const [reveal, setReveal] = useState<RevealState | null>(null);
+  const [revealPhase, setRevealPhase] = useState<'anonymous' | 'revealed'>('anonymous');
+  const [countdown, setCountdown] = useState(4);
   const [selectedProfile, setSelectedProfile] = useState<ProfileDetail | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
