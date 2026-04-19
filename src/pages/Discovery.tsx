@@ -54,6 +54,8 @@ const ENGINE_CONFIG: EngineConfig = IS_DEV
       accelerometer_threshold: 999,
       no_accel_z_penalty: 0,
       no_accel_sustained_multiplier: 1,
+      sustained_duration_sec: 0,
+      sustained_min_readings: 1,
     }
   : DEFAULT_CONFIG;
 console.log('[Discovery] ENGINE_CONFIG active:', JSON.stringify(ENGINE_CONFIG), 'IS_DEV:', IS_DEV);
