@@ -4,7 +4,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -13,6 +12,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
+
+const noirBorder = { border: '1px solid #2a2a2a' } as const;
 
 const Register = () => {
   const navigate = useNavigate();
@@ -52,36 +53,130 @@ const Register = () => {
     navigate('/profile/setup', { replace: true });
   };
 
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = '#d4a574';
+  };
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = '#2a2a2a';
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md p-6 space-y-5">
-        <div>
-          <h1 className="text-2xl font-bold">Crea il tuo account</h1>
-          <p className="text-sm text-muted-foreground">Bastano 30 secondi</p>
+    <div
+      className="min-h-screen flex items-center justify-center p-6 text-foreground"
+      style={{ backgroundColor: '#0d0d0d' }}
+    >
+      <div className="w-full max-w-sm py-10">
+        {/* Header */}
+        <div className="text-center space-y-4 mb-10">
+          <p
+            className="text-[10px] uppercase tracking-[0.4em]"
+            style={{ color: '#7a7570' }}
+          >
+            HeartSync
+          </p>
+          <h1
+            className="font-display text-5xl leading-[1.05]"
+            style={{ color: '#f0ece4' }}
+          >
+            Inizia.
+          </h1>
+          <p
+            className="font-display italic text-base"
+            style={{ color: '#d4a574' }}
+          >
+            Il tuo cuore lo ha scelto prima di te.
+          </p>
         </div>
-        <form onSubmit={onSubmit} className="space-y-4">
+
+        <form onSubmit={onSubmit} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Label htmlFor="email" className="text-[10px] uppercase tracking-[0.25em]" style={{ color: '#7a7570' }}>
+              Email
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              className="h-12 rounded-none bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
+              style={{ color: '#f0ece4', ...noirBorder }}
+            />
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" autoComplete="new-password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Label htmlFor="password" className="text-[10px] uppercase tracking-[0.25em]" style={{ color: '#7a7570' }}>
+              Password
+            </Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              className="h-12 rounded-none bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
+              style={{ color: '#f0ece4', ...noirBorder }}
+            />
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="name">Nome</Label>
-            <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
+            <Label htmlFor="name" className="text-[10px] uppercase tracking-[0.25em]" style={{ color: '#7a7570' }}>
+              Nome
+            </Label>
+            <Input
+              id="name"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              className="h-12 rounded-none bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
+              style={{ color: '#f0ece4', ...noirBorder }}
+            />
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="age">Età</Label>
-            <Input id="age" type="number" min={18} max={120} required value={age} onChange={(e) => setAge(e.target.value)} />
+            <Label htmlFor="age" className="text-[10px] uppercase tracking-[0.25em]" style={{ color: '#7a7570' }}>
+              Età
+            </Label>
+            <Input
+              id="age"
+              type="number"
+              min={18}
+              max={120}
+              required
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              className="h-12 rounded-none bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
+              style={{ color: '#f0ece4', ...noirBorder }}
+            />
           </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Genere</Label>
+              <Label className="text-[10px] uppercase tracking-[0.25em]" style={{ color: '#7a7570' }}>
+                Genere
+              </Label>
               <Select value={gender} onValueChange={setGender}>
-                <SelectTrigger><SelectValue placeholder="Seleziona" /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger
+                  className="h-12 rounded-none bg-transparent text-[14px] focus:ring-0 focus:ring-offset-0"
+                  style={{ color: '#f0ece4', ...noirBorder }}
+                >
+                  <SelectValue placeholder="Seleziona" />
+                </SelectTrigger>
+                <SelectContent
+                  className="rounded-none"
+                  style={{ backgroundColor: '#1a1a1a', color: '#f0ece4', ...noirBorder }}
+                >
                   <SelectItem value="female">Donna</SelectItem>
                   <SelectItem value="male">Uomo</SelectItem>
                   <SelectItem value="nonbinary">Non binario</SelectItem>
@@ -90,10 +185,20 @@ const Register = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Chi cerchi</Label>
+              <Label className="text-[10px] uppercase tracking-[0.25em]" style={{ color: '#7a7570' }}>
+                Chi cerchi
+              </Label>
               <Select value={lookingFor} onValueChange={setLookingFor}>
-                <SelectTrigger><SelectValue placeholder="Seleziona" /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger
+                  className="h-12 rounded-none bg-transparent text-[14px] focus:ring-0 focus:ring-offset-0"
+                  style={{ color: '#f0ece4', ...noirBorder }}
+                >
+                  <SelectValue placeholder="Seleziona" />
+                </SelectTrigger>
+                <SelectContent
+                  className="rounded-none"
+                  style={{ backgroundColor: '#1a1a1a', color: '#f0ece4', ...noirBorder }}
+                >
                   <SelectItem value="female">Donne</SelectItem>
                   <SelectItem value="male">Uomini</SelectItem>
                   <SelectItem value="everyone">Tutti</SelectItem>
@@ -101,17 +206,30 @@ const Register = () => {
               </Select>
             </div>
           </div>
-          <Button type="submit" className="w-full" disabled={submitting}>
+
+          <Button
+            type="submit"
+            disabled={submitting}
+            className="w-full h-12 rounded-none uppercase tracking-[0.25em] text-xs font-medium hover:brightness-110 transition-all mt-2"
+            style={{ backgroundColor: '#d4a574', color: '#0d0d0d' }}
+          >
             {submitting ? 'Creazione…' : 'Registrati'}
           </Button>
         </form>
-        <p className="text-sm text-center text-muted-foreground">
-          Hai già un account?{' '}
-          <Link to="/login" className="text-primary font-medium hover:underline">
-            Accedi
-          </Link>
-        </p>
-      </Card>
+
+        <div className="mt-8 text-center">
+          <p className="text-xs" style={{ color: '#7a7570' }}>
+            Hai già un account?{' '}
+            <Link
+              to="/login"
+              className="underline-offset-4 hover:underline transition-colors"
+              style={{ color: '#d4a574' }}
+            >
+              Accedi
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
