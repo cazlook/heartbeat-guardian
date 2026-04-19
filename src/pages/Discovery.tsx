@@ -34,10 +34,17 @@ import {
 import { HeartRatePoller, type LiveHrSample } from '@/engine/heartRatePoller';
 import { Link, useNavigate } from 'react-router-dom';
 
-const IS_DEV = import.meta.env.DEV;
+// Debug mode: active in Vite dev OR when ?debug=1 is in the URL.
+// The Lovable preview serves a production build, so import.meta.env.DEV
+// alone isn't enough — the URL flag lets us turn on the dev override
+// (shorter learning phase, looser noise filter) on demand.
+const IS_DEV =
+  import.meta.env.DEV ||
+  (typeof window !== 'undefined' && window.location.search.includes('debug=1'));
 
-// In dev mode, shorten the learning phase so the debug panel can produce
-// meaningful decisions without waiting 90s of wall-clock time.
+// In dev mode, shorten the learning phase and loosen the noise filter so
+// the debug panel can produce meaningful decisions without waiting 90s of
+// wall-clock time.
 const ENGINE_CONFIG: EngineConfig = IS_DEV
   ? { ...DEFAULT_CONFIG, learning_duration_sec: 0, learning_min_readings: 12, variance_threshold: 20 }
   : DEFAULT_CONFIG;
