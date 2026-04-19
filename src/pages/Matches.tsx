@@ -21,8 +21,14 @@ interface MatchRow {
 
 const Matches = () => {
   const { user } = useAuth();
+  const { markAllSeen } = useMatchReveal();
   const [loading, setLoading] = useState(true);
   const [matches, setMatches] = useState<MatchRow[]>([]);
+
+  // Mark all matches as seen as soon as the user opens this page.
+  useEffect(() => {
+    markAllSeen();
+  }, [markAllSeen]);
 
   useEffect(() => {
     if (!user) return;
