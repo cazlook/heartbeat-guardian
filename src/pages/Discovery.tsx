@@ -576,6 +576,7 @@ const ProfileCardView = forwardRef<HTMLDivElement, ProfileCardViewProps>(({
       </Card>
     </div>
   );
-};
+});
+ProfileCardView.displayName = 'ProfileCardView';
 
 export default Discovery;
