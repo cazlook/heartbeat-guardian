@@ -46,7 +46,7 @@ interface ProfileCard {
 type Intensity = 'low' | 'medium' | 'high';
 
 const REACTION_COOLDOWN_MS = 30_000; // don't write more than 1 row per profile / 30s
-const VISIBILITY_THRESHOLD = 0.6;    // when card is "in view"
+const VISIBILITY_THRESHOLD = 0.3;    // when card is "in view"
 
 const intensityFromZ = (z: number): Intensity => {
   if (z >= DEFAULT_CONFIG.strong_z_threshold) return 'high';
