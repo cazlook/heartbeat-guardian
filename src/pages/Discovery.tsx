@@ -472,7 +472,7 @@ const Discovery = () => {
       std_resting_hr: restingHrStd != null ? Number(restingHrStd) : null,
       retrieved_at: Date.now(),
     };
-    sessionRef.current = createSession(watchData);
+    sessionRef.current = createSession(watchData, ENGINE_CONFIG);
     sessionOwnerRef.current = userId;
     reactionWindowRef.current = null;
     lastWriteRef.current.clear();
