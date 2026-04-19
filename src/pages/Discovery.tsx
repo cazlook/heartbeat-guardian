@@ -226,6 +226,9 @@ const Discovery = () => {
   const persistReaction = useCallback(
     async (profileId: string, reading: ReadingLog, peakBpm: number, durationMs: number) => {
       if (!user || reading.z_score == null) return;
+      // Mock profiles non vivono nel DB → niente persist, niente check-match.
+      // L'animazione di pulse parte comunque per dare feedback visivo.
+      if (isMockProfileId(profileId)) return;
       const now = Date.now();
       const last = lastWriteRef.current.get(profileId) ?? 0;
       if (now - last < REACTION_COOLDOWN_MS) return;
