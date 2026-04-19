@@ -136,6 +136,8 @@ const Discovery = () => {
   const lastWriteRef = useRef<Map<string, number>>(new Map());
   const revealedPairRef = useRef<Set<string>>(new Set());
   const handleSampleRef = useRef<((s: LiveHrSample) => void) | null>(null);
+  const profilesRef = useRef<ProfileCard[]>([]);
+  useEffect(() => { profilesRef.current = profiles; }, [profiles]);
 
   // ── Load profiles & bootstrap session ──────────────────────────────
   useEffect(() => {
@@ -274,7 +276,7 @@ const Discovery = () => {
         }
         if (data?.matched && data.match_id) {
           revealedPairRef.current.add(profileId);
-          const match = profiles.find((p) => p.id === profileId) ?? null;
+          const match = profilesRef.current.find((p) => p.id === profileId) ?? null;
           setReveal({
             matchId: data.match_id,
             cardiacScore: Number(data.cardiac_score ?? 0),
