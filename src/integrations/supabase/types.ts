@@ -14,16 +14,169 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      biometric_reactions: {
+        Row: {
+          baseline_mean: number
+          baseline_std: number
+          confidence: number
+          created_at: string
+          duration_ms: number
+          id: string
+          intensity: Database["public"]["Enums"]["reaction_intensity"]
+          peak_bpm: number
+          profile_id: string
+          viewer_id: string
+          z_score: number
+        }
+        Insert: {
+          baseline_mean: number
+          baseline_std: number
+          confidence: number
+          created_at?: string
+          duration_ms: number
+          id?: string
+          intensity: Database["public"]["Enums"]["reaction_intensity"]
+          peak_bpm: number
+          profile_id: string
+          viewer_id: string
+          z_score: number
+        }
+        Update: {
+          baseline_mean?: number
+          baseline_std?: number
+          confidence?: number
+          created_at?: string
+          duration_ms?: number
+          id?: string
+          intensity?: Database["public"]["Enums"]["reaction_intensity"]
+          peak_bpm?: number
+          profile_id?: string
+          viewer_id?: string
+          z_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biometric_reactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matches: {
+        Row: {
+          cardiac_score: number
+          created_at: string
+          id: string
+          user_a: string
+          user_b: string
+        }
+        Insert: {
+          cardiac_score: number
+          created_at?: string
+          id?: string
+          user_a: string
+          user_b: string
+        }
+        Update: {
+          cardiac_score?: number
+          created_at?: string
+          id?: string
+          user_a?: string
+          user_b?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          match_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          match_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          match_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          age: number | null
+          baseline_mean: number | null
+          baseline_std: number | null
+          baseline_updated_at: string | null
+          bio: string | null
+          created_at: string
+          gender: string | null
+          id: string
+          looking_for: string | null
+          name: string | null
+          photos: string[]
+          updated_at: string
+        }
+        Insert: {
+          age?: number | null
+          baseline_mean?: number | null
+          baseline_std?: number | null
+          baseline_updated_at?: string | null
+          bio?: string | null
+          created_at?: string
+          gender?: string | null
+          id: string
+          looking_for?: string | null
+          name?: string | null
+          photos?: string[]
+          updated_at?: string
+        }
+        Update: {
+          age?: number | null
+          baseline_mean?: number | null
+          baseline_std?: number | null
+          baseline_updated_at?: string | null
+          bio?: string | null
+          created_at?: string
+          gender?: string | null
+          id?: string
+          looking_for?: string | null
+          name?: string | null
+          photos?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_match_participant: {
+        Args: { _match_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      reaction_intensity: "low" | "medium" | "high"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +303,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      reaction_intensity: ["low", "medium", "high"],
+    },
   },
 } as const
