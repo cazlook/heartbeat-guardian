@@ -282,6 +282,22 @@ const Discovery = () => {
 
   // ── Track which card is in view (intersection observer) ────────────
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Stable ref callback per profile id — avoids React detaching/reattaching
+  // the ref on every render (which would happen if we returned a fresh fn).
+  const refSettersRef = useRef<Map<string, (el: HTMLDivElement | null) => void>>(new Map());
+  const setCardRef = useCallback((id: string) => {
+    let setter = refSettersRef.current.get(id);
+    if (!setter) {
+      setter = (el: HTMLDivElement | null) => {
+        if (el) cardRefs.current.set(id, el);
+        else cardRefs.current.delete(id);
+      };
+      refSettersRef.current.set(id, setter);
+    }
+    return setter;
+  }, []);
+
   useEffect(() => {
     if (profiles.length === 0) return;
 
@@ -291,6 +307,7 @@ const Discovery = () => {
       const firstId = profiles[0].id;
       activeProfileRef.current = firstId;
       setActiveProfileId(firstId);
+      console.log('[Discovery] fallback active profile →', firstId);
     }
 
     const observer = new IntersectionObserver(
@@ -304,19 +321,30 @@ const Discovery = () => {
             activeProfileRef.current = id;
             setActiveProfileId(id);
             reactionWindowRef.current = null;
+            console.log('[Discovery] observer → active profile', id);
           }
         }
       },
       { threshold: [0, 0.15, VISIBILITY_THRESHOLD, 0.6, 0.9, 1] },
     );
-    cardRefs.current.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+
+    // Observe everything currently in the map, then re-check shortly after
+    // to catch refs attached after this effect ran (rare but defensive).
+    const observeAll = () => {
+      cardRefs.current.forEach((el, id) => {
+        observer.observe(el);
+        console.log('[Discovery] observing card', id);
+      });
+    };
+    observeAll();
+    const t = window.setTimeout(observeAll, 50);
+
+    return () => {
+      window.clearTimeout(t);
+      observer.disconnect();
+    };
   }, [profiles]);
 
-  const setCardRef = useCallback((id: string) => (el: HTMLDivElement | null) => {
-    if (el) cardRefs.current.set(id, el);
-    else cardRefs.current.delete(id);
-  }, []);
 
   // ── Debug: inject a synthetic BPM through the same pipeline ────────
   const injectDebugBpm = useCallback((bpm: number) => {
