@@ -96,6 +96,7 @@ interface DebugEvent {
 const Discovery = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { unseenCount: unseenMatches } = useMatchReveal();
   const userId = user?.id ?? null;
 
   const [profiles, setProfiles] = useState<ProfileCard[]>([]);
