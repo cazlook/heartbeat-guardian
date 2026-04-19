@@ -46,7 +46,7 @@ const IS_DEV =
 // the debug panel can produce meaningful decisions without waiting 90s of
 // wall-clock time.
 const ENGINE_CONFIG: EngineConfig = IS_DEV
-  ? { ...DEFAULT_CONFIG, learning_duration_sec: 0, learning_min_readings: 12, variance_threshold: 20 }
+  ? { ...DEFAULT_CONFIG, learning_duration_sec: 0, learning_min_readings: 12, variance_threshold: 200 }
   : DEFAULT_CONFIG;
 console.log('[Discovery] ENGINE_CONFIG active:', JSON.stringify(ENGINE_CONFIG), 'IS_DEV:', IS_DEV);
 
