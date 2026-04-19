@@ -26,6 +26,7 @@ import {
   createSession,
   processReading,
   DEFAULT_CONFIG,
+  type EngineConfig,
   type ReadingLog,
   type SessionState,
   type SmartWatchData,
