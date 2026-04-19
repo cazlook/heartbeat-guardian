@@ -351,6 +351,28 @@ const Discovery = () => {
   }, [profiles]);
 
 
+  // ── Debug: prime baseline so SignalProcessor exits learning phase ──
+  // Feeds N synthetic resting samples (70 BPM) through the same pipeline so
+  // the engine accumulates baseline statistics and stops returning
+  // REJECTED_LEARNING_PHASE. Safe to call repeatedly: if already past learning
+  // it just adds extra resting samples (engine handles this fine).
+  const primeBaseline = useCallback((count = 12) => {
+    const session = sessionRef.current;
+    if (!session) return;
+    const baseTime = Date.now() - count * 1000;
+    for (let i = 0; i < count; i += 1) {
+      const t = baseTime + i * 1000;
+      handleSampleRef.current?.({
+        bpm: 70,
+        sampleTime: t,
+        receivedAt: t,
+        latencyMs: 0,
+        source: 'mock',
+      });
+    }
+    console.log('[Discovery] baseline primed with', count, 'resting samples');
+  }, []);
+
   // ── Debug: inject a synthetic BPM through the same pipeline ────────
   // Calls processReading directly (instead of going through the poller) so
   // we get a synchronous result we can log, and a clear warning when no
@@ -366,6 +388,18 @@ const Discovery = () => {
       console.warn('[Discovery] WARN: no active profile at inject time');
     }
 
+    // Auto-prime baseline if we're still in learning phase, so the debug
+    // injection actually produces a meaningful decision.
+    const probe = processReading(bpm, session, {
+      app_in_foreground: true,
+      in_discovery_screen: true,
+      signal_quality: 0.9,
+    });
+    if (probe.reason_code === 'REJECTED_LEARNING_PHASE') {
+      console.log('[Discovery] still in learning phase → priming baseline');
+      primeBaseline(12);
+    }
+
     const now = Date.now();
     const sample: LiveHrSample = {
       bpm,
@@ -379,7 +413,7 @@ const Discovery = () => {
     // baseline, debug log, reaction window, persistence, …).
     handleSampleRef.current?.(sample);
 
-    // Additionally compute a standalone read-only result for explicit logging.
+    // Standalone read-only result for explicit logging.
     const reading = processReading(bpm, session, {
       app_in_foreground: true,
       in_discovery_screen: true,
@@ -392,7 +426,7 @@ const Discovery = () => {
       profileId,
       bpm,
     }));
-  }, []);
+  }, [primeBaseline]);
 
   const triggerSpike = useCallback(() => {
     // Quick burst: several high samples to satisfy sustained-duration filter,
@@ -406,6 +440,31 @@ const Discovery = () => {
       if (i >= 8) window.clearInterval(id);
     }, 250);
   }, [injectDebugBpm]);
+
+  // ── Debug: reset session from scratch ──────────────────────────────
+  const resetDebugSession = useCallback(async () => {
+    if (!user) return;
+    const { data: me } = await supabase
+      .from('profiles')
+      .select('baseline_mean, baseline_std')
+      .eq('id', user.id)
+      .maybeSingle();
+    const restingHr = me?.baseline_mean ?? 70;
+    const restingHrStd = me?.baseline_std ?? null;
+    const watchData: SmartWatchData = {
+      source: 'healthkit',
+      resting_hr: Number(restingHr),
+      resting_hr_history: [],
+      avg_resting_hr: Number(restingHr),
+      std_resting_hr: restingHrStd != null ? Number(restingHrStd) : null,
+      retrieved_at: Date.now(),
+    };
+    sessionRef.current = createSession(watchData);
+    reactionWindowRef.current = null;
+    lastWriteRef.current.clear();
+    setDebugLog([]);
+    console.log('[Discovery] session reset');
+  }, [user]);
 
   // ── Render ─────────────────────────────────────────────────────────
   if (loading) {
