@@ -1,68 +1,62 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ────────────────────────────────────────────────────────────────────
-   HeartSync — DARK CINEMATIC NOIR
-   Palette: nero profondo + grigi caldi + un solo accent ambra/oro.
-   Tipografia: Cormorant Garamond (serif display) + Inter (UI).
-   Tutti i colori sono HSL. Niente colori inline nei componenti.
+   HeartSync — DARK CINEMATIC NOIR (strict)
+   ─ Sfondo:        #0d0d0d  (nero profondo)
+   ─ Superfici:     #1a1a1a / #222
+   ─ Accent:        #d4a574  (ambra/oro, usato pochissimo)
+   ─ Testo prim.:   #f0ece4  (bianco caldo)
+   ─ Testo muted:   #7a7570
+   ─ Foto profilo:  B/N di default → colore al match
+   ─ Display font:  Cormorant Garamond
+   ─ Mono (BPM):    JetBrains Mono
+   ─ VIETATI:       gradient, glow morbido, rosso/rosa
    ──────────────────────────────────────────────────────────────────── */
 
 @layer base {
   :root {
-    /* Nero profondo con sfumatura calda (warm black, non blu) */
-    --background: 30 8% 4%;
-    --foreground: 36 22% 94%;
+    --background: 0 0% 5%;            /* #0d0d0d */
+    --foreground: 36 22% 92%;         /* #f0ece4 */
 
-    --card: 30 6% 8%;
-    --card-foreground: 36 22% 94%;
+    --card: 0 0% 10%;                 /* #1a1a1a */
+    --card-foreground: 36 22% 92%;
 
-    --popover: 30 8% 6%;
-    --popover-foreground: 36 22% 94%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 36 22% 92%;
 
-    /* Ambra/oro — unico accent, usato con parsimonia */
     --primary: 33 45% 65%;            /* #d4a574 */
-    --primary-foreground: 30 10% 6%;
-    --primary-glow: 36 60% 72%;
+    --primary-foreground: 0 0% 5%;
+    --primary-glow: 33 45% 65%;       /* alias = primary, no glow */
 
-    --secondary: 30 6% 12%;
-    --secondary-foreground: 36 22% 94%;
+    --secondary: 0 0% 13%;            /* #222 */
+    --secondary-foreground: 36 22% 92%;
 
-    --muted: 30 5% 14%;
-    --muted-foreground: 36 8% 60%;
+    --muted: 0 0% 13%;
+    --muted-foreground: 33 6% 47%;    /* #7a7570 */
 
     --accent: 33 45% 65%;
-    --accent-foreground: 30 10% 6%;
+    --accent-foreground: 0 0% 5%;
 
-    /* Destructive: rosso sangue desaturato (noir) */
-    --destructive: 0 55% 38%;
-    --destructive-foreground: 36 22% 94%;
+    --destructive: 0 45% 35%;
+    --destructive-foreground: 36 22% 92%;
 
-    --border: 30 6% 16%;
-    --input: 30 6% 12%;
+    --border: 0 0% 16%;
+    --input: 0 0% 13%;
     --ring: 33 45% 65%;
 
-    --radius: 0.5rem;
+    --radius: 0.25rem;
 
-    /* Gradients — sottili, non saturi */
-    --gradient-cardiac: linear-gradient(135deg, hsl(33 45% 65%) 0%, hsl(28 40% 55%) 60%, hsl(20 35% 40%) 100%);
-    --gradient-surface: linear-gradient(180deg, hsl(30 6% 8%) 0%, hsl(30 8% 4%) 100%);
-    --gradient-overlay: linear-gradient(180deg, hsl(30 8% 4% / 0) 0%, hsl(30 8% 4% / 0.5) 50%, hsl(30 8% 4% / 0.95) 100%);
-
-    /* Shadows */
-    --shadow-elegant: 0 30px 80px -30px hsl(33 45% 30% / 0.45);
-    --shadow-soft: 0 8px 24px -8px hsl(0 0% 0% / 0.7);
-
-    --sidebar-background: 30 6% 7%;
-    --sidebar-foreground: 36 18% 88%;
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 36 22% 92%;
     --sidebar-primary: 33 45% 65%;
-    --sidebar-primary-foreground: 30 10% 6%;
-    --sidebar-accent: 30 5% 14%;
-    --sidebar-accent-foreground: 36 18% 88%;
-    --sidebar-border: 30 6% 16%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 0 0% 13%;
+    --sidebar-accent-foreground: 36 22% 92%;
+    --sidebar-border: 0 0% 16%;
     --sidebar-ring: 33 45% 65%;
   }
 }
@@ -79,63 +73,30 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    background-image:
-      radial-gradient(ellipse at top, hsl(33 30% 10% / 0.45) 0%, transparent 55%),
-      radial-gradient(ellipse at bottom, hsl(20 20% 6% / 0.5) 0%, transparent 55%);
-    background-attachment: fixed;
+    /* Niente glow radiale: sfondo piatto */
+    background-color: hsl(var(--background));
   }
 
-  /* Serif display per titoli marcati */
   .font-display {
-    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    font-family: 'Cormorant Garamond', 'Playfair Display', 'Times New Roman', serif;
     font-weight: 500;
     letter-spacing: -0.01em;
+  }
+
+  .font-mono-bpm {
+    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
   }
 }
 
 @layer utilities {
-  .bg-gradient-cardiac {
-    background-image: var(--gradient-cardiac);
-  }
-  .bg-gradient-surface {
-    background-image: var(--gradient-surface);
-  }
-  .bg-gradient-overlay {
-    background-image: var(--gradient-overlay);
-  }
-  .shadow-elegant {
-    box-shadow: var(--shadow-elegant);
-  }
-  .shadow-soft {
-    box-shadow: var(--shadow-soft);
-  }
-  .text-gradient-cardiac {
-    background-image: var(--gradient-cardiac);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  /* Foto desaturate di default — noir aesthetic */
+  /* Foto profilo: B/N di default, colore solo se .photo-color */
   .photo-noir {
-    filter: grayscale(0.85) contrast(1.05) brightness(0.92);
-    transition: filter 800ms ease-out;
+    filter: grayscale(1) contrast(1.05) brightness(0.92);
+    transition: filter 900ms ease-out;
   }
-  .photo-noir-color {
+  .photo-color {
     filter: grayscale(0) contrast(1) brightness(1);
   }
-}
-
-@layer components {
-  .heartbeat {
-    animation: heartbeat 1.4s ease-in-out infinite;
-  }
-}
-
-@keyframes heartbeat {
-  0%, 100% { transform: scale(1); }
-  14% { transform: scale(1.12); }
-  28% { transform: scale(1); }
-  42% { transform: scale(1.08); }
-  70% { transform: scale(1); }
 }
