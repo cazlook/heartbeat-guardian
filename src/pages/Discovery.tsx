@@ -30,7 +30,7 @@ import {
   type SmartWatchData,
 } from '@/engine';
 import { HeartRatePoller, type LiveHrSample } from '@/engine/heartRatePoller';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface ProfileCard {
   id: string;
@@ -51,13 +51,20 @@ const intensityFromZ = (z: number): Intensity => {
   return 'low';
 };
 
+interface RevealState {
+  matchId: string;
+  cardiacScore: number;
+}
+
 const Discovery = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const [profiles, setProfiles] = useState<ProfileCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [pulseProfileId, setPulseProfileId] = useState<string | null>(null);
+  const [reveal, setReveal] = useState<RevealState | null>(null);
 
   const sessionRef = useRef<SessionState | null>(null);
   const pollerRef = useRef<HeartRatePoller | null>(null);
@@ -69,6 +76,7 @@ const Discovery = () => {
     peakZ: number;
   } | null>(null);
   const lastWriteRef = useRef<Map<string, number>>(new Map());
+  const revealedPairRef = useRef<Set<string>>(new Set());
 
   // ── Load profiles & bootstrap session ──────────────────────────────
   useEffect(() => {
