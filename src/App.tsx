@@ -3,8 +3,15 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index.tsx";
 import Debug from "./pages/Debug.tsx";
+import Login from "./pages/Login.tsx";
+import Register from "./pages/Register.tsx";
+import Discovery from "./pages/Discovery.tsx";
+import Matches from "./pages/Matches.tsx";
+import ProfileSetup from "./pages/ProfileSetup.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -15,12 +22,21 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/debug" element={<Debug />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/discovery" element={<ProtectedRoute><Discovery /></ProtectedRoute>} />
+            <Route path="/matches" element={<ProtectedRoute><Matches /></ProtectedRoute>} />
+            <Route path="/profile/setup" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
+            <Route path="/debug" element={<ProtectedRoute><Debug /></ProtectedRoute>} />
+
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
