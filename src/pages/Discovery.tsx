@@ -30,7 +30,7 @@ import {
   type SmartWatchData,
 } from '@/engine';
 import { HeartRatePoller, type LiveHrSample } from '@/engine/heartRatePoller';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface ProfileCard {
   id: string;
@@ -51,13 +51,20 @@ const intensityFromZ = (z: number): Intensity => {
   return 'low';
 };
 
+interface RevealState {
+  matchId: string;
+  cardiacScore: number;
+}
+
 const Discovery = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const [profiles, setProfiles] = useState<ProfileCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [pulseProfileId, setPulseProfileId] = useState<string | null>(null);
+  const [reveal, setReveal] = useState<RevealState | null>(null);
 
   const sessionRef = useRef<SessionState | null>(null);
   const pollerRef = useRef<HeartRatePoller | null>(null);
@@ -69,6 +76,7 @@ const Discovery = () => {
     peakZ: number;
   } | null>(null);
   const lastWriteRef = useRef<Map<string, number>>(new Map());
+  const revealedPairRef = useRef<Set<string>>(new Set());
 
   // ── Load profiles & bootstrap session ──────────────────────────────
   useEffect(() => {
@@ -159,6 +167,25 @@ const Discovery = () => {
       if (error) {
         // Don't toast: surface only via console. The detection animation already gave feedback.
         console.warn('[Discovery] insert reaction failed', error.message);
+        return;
+      }
+
+      // Check bilateral match
+      if (revealedPairRef.current.has(profileId)) return;
+      try {
+        const { data, error: fnErr } = await supabase.functions.invoke('check-match', {
+          body: { viewer_id: user.id, profile_id: profileId },
+        });
+        if (fnErr) {
+          console.warn('[Discovery] check-match failed', fnErr.message);
+          return;
+        }
+        if (data?.matched && data.match_id) {
+          revealedPairRef.current.add(profileId);
+          setReveal({ matchId: data.match_id, cardiacScore: Number(data.cardiac_score ?? 0) });
+        }
+      } catch (e) {
+        console.warn('[Discovery] check-match exception', e);
       }
     },
     [user],
@@ -291,6 +318,50 @@ const Discovery = () => {
           ))
         )}
       </main>
+
+      {reveal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm p-6 animate-in fade-in duration-500"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="max-w-sm w-full text-center space-y-6">
+            <div className="relative mx-auto h-32 w-32 flex items-center justify-center">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-primary/30 animate-ping" />
+              <span className="absolute inline-flex h-24 w-24 rounded-full bg-primary/50" />
+              <span className="relative inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary">
+                <Heart className="h-10 w-10 text-primary-foreground fill-current" />
+              </span>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xl font-semibold leading-snug">
+                I vostri cuori hanno reagito allo stesso modo
+              </p>
+              <p className="text-3xl font-bold text-primary">
+                {reveal.cardiacScore.toFixed(1)}
+              </p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                Cardiac score
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button
+                size="lg"
+                onClick={() => {
+                  const id = reveal.matchId;
+                  setReveal(null);
+                  navigate(`/chat/${id}`);
+                }}
+              >
+                Vai alla chat
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setReveal(null)}>
+                Continua a esplorare
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
