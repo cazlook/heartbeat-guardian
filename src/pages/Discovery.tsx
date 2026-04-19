@@ -407,7 +407,7 @@ const Discovery = () => {
       app_in_foreground: true,
       in_discovery_screen: true,
       signal_quality: 0.9,
-    });
+    }, ENGINE_CONFIG);
     if (probe.reason_code === 'REJECTED_LEARNING_PHASE') {
       console.log('[Discovery] still in learning phase → priming baseline');
       primeBaseline(12);
