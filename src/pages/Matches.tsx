@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useMatchReveal } from '@/components/MatchRevealProvider';
 
 interface MatchRow {
   id: string;
@@ -20,8 +21,14 @@ interface MatchRow {
 
 const Matches = () => {
   const { user } = useAuth();
+  const { markAllSeen } = useMatchReveal();
   const [loading, setLoading] = useState(true);
   const [matches, setMatches] = useState<MatchRow[]>([]);
+
+  // Mark all matches as seen as soon as the user opens this page.
+  useEffect(() => {
+    markAllSeen();
+  }, [markAllSeen]);
 
   useEffect(() => {
     if (!user) return;
