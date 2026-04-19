@@ -26,6 +26,7 @@ import {
   createSession,
   processReading,
   DEFAULT_CONFIG,
+  type EngineConfig,
   type ReadingLog,
   type SessionState,
   type SmartWatchData,
@@ -34,6 +35,12 @@ import { HeartRatePoller, type LiveHrSample } from '@/engine/heartRatePoller';
 import { Link, useNavigate } from 'react-router-dom';
 
 const IS_DEV = import.meta.env.DEV;
+
+// In dev mode, shorten the learning phase so the debug panel can produce
+// meaningful decisions without waiting 90s of wall-clock time.
+const ENGINE_CONFIG: EngineConfig = IS_DEV
+  ? { ...DEFAULT_CONFIG, learning_duration_sec: 0, learning_min_readings: 12 }
+  : DEFAULT_CONFIG;
 
 interface ProfileCard {
   id: string;
@@ -123,7 +130,7 @@ const Discovery = () => {
           retrieved_at: Date.now(),
         };
 
-        sessionRef.current = createSession(watchData);
+        sessionRef.current = createSession(watchData, ENGINE_CONFIG);
         sessionOwnerRef.current = userId;
       }
 
@@ -226,7 +233,7 @@ const Discovery = () => {
       in_discovery_screen: true,
       signal_quality: 0.9,
       // accelerometer omitted → engine applies stricter no-accel rules
-    });
+    }, ENGINE_CONFIG);
 
     if (IS_DEV) {
       setDebugLog((prev) => {
@@ -400,7 +407,7 @@ const Discovery = () => {
       app_in_foreground: true,
       in_discovery_screen: true,
       signal_quality: 0.9,
-    });
+    }, ENGINE_CONFIG);
     if (probe.reason_code === 'REJECTED_LEARNING_PHASE') {
       console.log('[Discovery] still in learning phase → priming baseline');
       primeBaseline(12);
@@ -424,7 +431,7 @@ const Discovery = () => {
       app_in_foreground: true,
       in_discovery_screen: true,
       signal_quality: 0.9,
-    });
+    }, ENGINE_CONFIG);
     console.log('[Discovery] inject result:', JSON.stringify({
       decision: reading.decision,
       reason: reading.reason_code,
@@ -465,7 +472,7 @@ const Discovery = () => {
       std_resting_hr: restingHrStd != null ? Number(restingHrStd) : null,
       retrieved_at: Date.now(),
     };
-    sessionRef.current = createSession(watchData);
+    sessionRef.current = createSession(watchData, ENGINE_CONFIG);
     sessionOwnerRef.current = userId;
     reactionWindowRef.current = null;
     lastWriteRef.current.clear();
