@@ -39,7 +39,7 @@ const IS_DEV = import.meta.env.DEV;
 // In dev mode, shorten the learning phase so the debug panel can produce
 // meaningful decisions without waiting 90s of wall-clock time.
 const ENGINE_CONFIG: EngineConfig = IS_DEV
-  ? { ...DEFAULT_CONFIG, learning_duration_sec: 0, learning_min_readings: 12 }
+  ? { ...DEFAULT_CONFIG, learning_duration_sec: 0, learning_min_readings: 12, variance_threshold: 20 }
   : DEFAULT_CONFIG;
 
 interface ProfileCard {
@@ -374,7 +374,7 @@ const Discovery = () => {
     if (!session) return;
     // Realistic resting variability (~mean 70, SD ~3 BPM) so the baseline
     // doesn't collapse to SD≈0 (which would make every non-70 reading noise).
-    const restingPattern = [68, 72, 70, 74, 66, 71, 69, 73, 70, 75, 67, 71];
+    const restingPattern = [69, 71, 70, 71, 69, 70, 71, 70, 69, 71, 70, 70];
     const baseTime = Date.now() - count * 1000;
     for (let i = 0; i < count; i += 1) {
       const t = baseTime + i * 1000;
