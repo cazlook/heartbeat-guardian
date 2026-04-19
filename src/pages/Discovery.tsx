@@ -130,7 +130,7 @@ const Discovery = () => {
           retrieved_at: Date.now(),
         };
 
-        sessionRef.current = createSession(watchData);
+        sessionRef.current = createSession(watchData, ENGINE_CONFIG);
         sessionOwnerRef.current = userId;
       }
 
