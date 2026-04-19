@@ -310,6 +310,31 @@ const Discovery = () => {
     else cardRefs.current.delete(id);
   }, []);
 
+  // ── Debug: inject a synthetic BPM through the same pipeline ────────
+  const injectDebugBpm = useCallback((bpm: number) => {
+    const now = Date.now();
+    handleSampleRef.current?.({
+      bpm,
+      sampleTime: now,
+      receivedAt: now,
+      latencyMs: 0,
+      source: 'mock',
+    });
+  }, []);
+
+  const triggerSpike = useCallback(() => {
+    // Quick burst: several high samples to satisfy sustained-duration filter,
+    // then return to resting.
+    const peak = 110;
+    const rest = 70;
+    let i = 0;
+    const id = window.setInterval(() => {
+      injectDebugBpm(i < 6 ? peak : rest);
+      i += 1;
+      if (i >= 8) window.clearInterval(id);
+    }, 250);
+  }, [injectDebugBpm]);
+
   // ── Render ─────────────────────────────────────────────────────────
   if (loading) {
     return (
