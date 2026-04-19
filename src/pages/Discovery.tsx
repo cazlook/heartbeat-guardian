@@ -14,7 +14,7 @@
  * `DEFAULT_CONFIG`.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import { Heart, Loader2, LogOut, Bug } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
