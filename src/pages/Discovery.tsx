@@ -524,12 +524,11 @@ interface ProfileCardViewProps {
   isPulsing: boolean;
 }
 
-const ProfileCardView = ({
-  ref,
+const ProfileCardView = forwardRef<HTMLDivElement, ProfileCardViewProps>(({
   profile,
   isActive,
   isPulsing,
-}: ProfileCardViewProps & { ref?: (el: HTMLDivElement | null) => void }) => {
+}, ref) => {
   const photo = profile.photos?.[0];
   return (
     <div ref={ref} data-profile-id={profile.id}>
