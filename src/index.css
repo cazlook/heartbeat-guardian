@@ -1,64 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ────────────────────────────────────────────────────────────────────
-   HeartSync — biometric dark theme
+   HeartSync — DARK CINEMATIC NOIR
+   Palette: nero profondo + grigi caldi + un solo accent ambra/oro.
+   Tipografia: Cormorant Garamond (serif display) + Inter (UI).
    Tutti i colori sono HSL. Niente colori inline nei componenti.
    ──────────────────────────────────────────────────────────────────── */
 
 @layer base {
   :root {
-    /* Forziamo dark-by-default: la app è sempre in modalità scura */
-    --background: 240 16% 6%;
-    --foreground: 0 0% 98%;
+    /* Nero profondo con sfumatura calda (warm black, non blu) */
+    --background: 30 8% 4%;
+    --foreground: 36 22% 94%;
 
-    --card: 240 14% 9%;
-    --card-foreground: 0 0% 98%;
+    --card: 30 6% 8%;
+    --card-foreground: 36 22% 94%;
 
-    --popover: 240 16% 8%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 30 8% 6%;
+    --popover-foreground: 36 22% 94%;
 
-    /* Cardiac red — segnale biometrico */
-    --primary: 348 83% 58%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 348 100% 70%;
+    /* Ambra/oro — unico accent, usato con parsimonia */
+    --primary: 33 45% 65%;            /* #d4a574 */
+    --primary-foreground: 30 10% 6%;
+    --primary-glow: 36 60% 72%;
 
-    --secondary: 240 10% 14%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 30 6% 12%;
+    --secondary-foreground: 36 22% 94%;
 
-    --muted: 240 8% 16%;
-    --muted-foreground: 240 5% 64%;
+    --muted: 30 5% 14%;
+    --muted-foreground: 36 8% 60%;
 
-    --accent: 280 60% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 33 45% 65%;
+    --accent-foreground: 30 10% 6%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    /* Destructive: rosso sangue desaturato (noir) */
+    --destructive: 0 55% 38%;
+    --destructive-foreground: 36 22% 94%;
 
-    --border: 240 8% 18%;
-    --input: 240 8% 16%;
-    --ring: 348 83% 58%;
+    --border: 30 6% 16%;
+    --input: 30 6% 12%;
+    --ring: 33 45% 65%;
 
-    --radius: 1rem;
+    --radius: 0.5rem;
 
-    /* Gradients */
-    --gradient-cardiac: linear-gradient(135deg, hsl(348 83% 58%) 0%, hsl(330 82% 52%) 60%, hsl(280 60% 50%) 100%);
-    --gradient-surface: linear-gradient(180deg, hsl(240 16% 9%) 0%, hsl(240 18% 6%) 100%);
-    --gradient-overlay: linear-gradient(180deg, hsl(240 16% 6% / 0) 0%, hsl(240 16% 6% / 0.5) 50%, hsl(240 16% 6% / 0.95) 100%);
+    /* Gradients — sottili, non saturi */
+    --gradient-cardiac: linear-gradient(135deg, hsl(33 45% 65%) 0%, hsl(28 40% 55%) 60%, hsl(20 35% 40%) 100%);
+    --gradient-surface: linear-gradient(180deg, hsl(30 6% 8%) 0%, hsl(30 8% 4%) 100%);
+    --gradient-overlay: linear-gradient(180deg, hsl(30 8% 4% / 0) 0%, hsl(30 8% 4% / 0.5) 50%, hsl(30 8% 4% / 0.95) 100%);
 
     /* Shadows */
-    --shadow-elegant: 0 20px 60px -20px hsl(348 83% 58% / 0.35);
-    --shadow-soft: 0 8px 24px -8px hsl(240 50% 2% / 0.6);
+    --shadow-elegant: 0 30px 80px -30px hsl(33 45% 30% / 0.45);
+    --shadow-soft: 0 8px 24px -8px hsl(0 0% 0% / 0.7);
 
-    --sidebar-background: 240 14% 9%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 348 83% 58%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 8% 16%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 240 8% 18%;
-    --sidebar-ring: 348 83% 58%;
+    --sidebar-background: 30 6% 7%;
+    --sidebar-foreground: 36 18% 88%;
+    --sidebar-primary: 33 45% 65%;
+    --sidebar-primary-foreground: 30 10% 6%;
+    --sidebar-accent: 30 5% 14%;
+    --sidebar-accent-foreground: 36 18% 88%;
+    --sidebar-border: 30 6% 16%;
+    --sidebar-ring: 33 45% 65%;
   }
 }
 
@@ -73,13 +78,18 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    background-image: radial-gradient(
-        ellipse at top,
-        hsl(348 60% 12% / 0.4) 0%,
-        transparent 50%
-      ),
-      radial-gradient(ellipse at bottom, hsl(280 50% 10% / 0.3) 0%, transparent 50%);
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    background-image:
+      radial-gradient(ellipse at top, hsl(33 30% 10% / 0.45) 0%, transparent 55%),
+      radial-gradient(ellipse at bottom, hsl(20 20% 6% / 0.5) 0%, transparent 55%);
     background-attachment: fixed;
+  }
+
+  /* Serif display per titoli marcati */
+  .font-display {
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    font-weight: 500;
+    letter-spacing: -0.01em;
   }
 }
 
@@ -104,6 +114,15 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+  }
+
+  /* Foto desaturate di default — noir aesthetic */
+  .photo-noir {
+    filter: grayscale(0.85) contrast(1.05) brightness(0.92);
+    transition: filter 800ms ease-out;
+  }
+  .photo-noir-color {
+    filter: grayscale(0) contrast(1) brightness(1);
   }
 }
 

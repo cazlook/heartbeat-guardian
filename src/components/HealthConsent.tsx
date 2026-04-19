@@ -31,185 +31,140 @@ export const HealthConsent = ({ onReady }: Props) => {
   const isDone = result?.status === 'granted' && !!result.data;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-[#0a0a0f] relative overflow-hidden">
-      {/* Ambient glow background */}
+    <div className="min-h-screen flex items-center justify-center p-6 bg-background relative overflow-hidden">
+      {/* Ambient warm noir glow */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 -left-40 h-[480px] w-[480px] rounded-full bg-[#e53e3e] opacity-[0.12] blur-[120px]" />
-        <div className="absolute -bottom-40 -right-40 h-[520px] w-[520px] rounded-full bg-[#7c3aed] opacity-[0.14] blur-[120px]" />
-        <div className="absolute top-1/3 right-1/4 h-[260px] w-[260px] rounded-full bg-[#e53e3e] opacity-[0.08] blur-[100px]" />
+        <div className="absolute -top-40 left-1/4 h-[420px] w-[420px] rounded-full bg-primary/[0.08] blur-[120px]" />
+        <div className="absolute -bottom-40 right-1/4 h-[460px] w-[460px] rounded-full bg-primary/[0.06] blur-[120px]" />
       </div>
 
-      {/* Local keyframes */}
       <style>{`
-        @keyframes hc-pulse-glow {
-          0%, 100% { transform: scale(1); filter: drop-shadow(0 0 12px rgba(229,62,62,0.55)) drop-shadow(0 0 24px rgba(124,58,237,0.35)); }
-          50% { transform: scale(1.18); filter: drop-shadow(0 0 24px rgba(229,62,62,0.95)) drop-shadow(0 0 48px rgba(124,58,237,0.6)); }
+        @keyframes hc-noir-pulse {
+          0%, 100% { transform: scale(1); opacity: 0.85; }
+          50% { transform: scale(1.12); opacity: 1; }
         }
-        @keyframes hc-ring-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(229,62,62,0.55), 0 0 60px 0 rgba(124,58,237,0.35); }
-          50% { box-shadow: 0 0 0 18px rgba(229,62,62,0), 0 0 90px 4px rgba(124,58,237,0.55); }
-        }
-        @keyframes hc-shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
+        @keyframes hc-ring-breath {
+          0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.25), 0 0 60px 0 hsl(var(--primary) / 0.12); }
+          50% { box-shadow: 0 0 0 14px hsl(var(--primary) / 0), 0 0 90px 4px hsl(var(--primary) / 0.22); }
         }
       `}</style>
 
-      <div className="relative w-full max-w-lg">
-        {/* Card with gradient border */}
-        <div
-          className="rounded-3xl p-[1px]"
-          style={{
-            background: 'linear-gradient(135deg, rgba(229,62,62,0.55), rgba(124,58,237,0.55) 60%, rgba(229,62,62,0.2))',
-          }}
-        >
-          <div className="rounded-3xl bg-[#0f0f17]/95 backdrop-blur-xl p-8 space-y-7 text-white">
-            {/* Header with pulsing heart */}
-            <div className="flex flex-col items-center text-center gap-4">
-              <div
-                className="relative h-20 w-20 rounded-full flex items-center justify-center"
-                style={{
-                  background: 'radial-gradient(circle at 30% 30%, rgba(229,62,62,0.35), rgba(124,58,237,0.2) 70%, transparent)',
-                  animation: 'hc-ring-pulse 2.4s ease-in-out infinite',
-                }}
-              >
-                <Heart
-                  className="h-10 w-10 fill-current"
-                  style={{
-                    color: '#e53e3e',
-                    animation: 'hc-pulse-glow 1.4s ease-in-out infinite',
-                  }}
-                />
-              </div>
-              <div>
-                <h1
-                  className="text-3xl font-bold tracking-tight bg-clip-text text-transparent"
-                  style={{ backgroundImage: 'linear-gradient(90deg, #ffffff, #f5d0d6 50%, #c4b5fd)' }}
-                >
-                  Calibrazione cardiaca
-                </h1>
-                <p className="text-sm text-white/55 mt-1">
-                  HeartSync legge la tua baseline reale via{' '}
-                  <span className="text-white/80">HealthKit</span> /{' '}
-                  <span className="text-white/80">Health Connect</span>
-                </p>
-              </div>
-            </div>
-
-            {/* Info rows */}
-            <div className="space-y-3">
-              <div className="flex gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/5">
-                <div
-                  className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: 'linear-gradient(135deg, rgba(229,62,62,0.25), rgba(124,58,237,0.25))' }}
-                >
-                  <Activity className="h-4 w-4" style={{ color: '#f87171' }} />
-                </div>
-                <div className="text-sm">
-                  <p className="font-medium text-white/95">Cosa leggiamo</p>
-                  <p className="text-white/55 leading-relaxed">
-                    Resting heart rate degli ultimi 7 giorni — baseline iniziale senza calibrazione manuale.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/5">
-                <div
-                  className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.25), rgba(229,62,62,0.25))' }}
-                >
-                  <Shield className="h-4 w-4" style={{ color: '#c4b5fd' }} />
-                </div>
-                <div className="text-sm">
-                  <p className="font-medium text-white/95">Privacy</p>
-                  <p className="text-white/55 leading-relaxed">
-                    I dati restano sul dispositivo. Salviamo solo media e deviazione standard, mai timestamp né campioni grezzi.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Native required */}
-            {!native && (
-              <div className="flex gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-sm">
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-400" />
-                <p className="text-amber-100/80">
-                  Build nativa richiesta. In anteprima web i dati non sono disponibili: esporta su GitHub e usa{' '}
-                  <code className="px-1.5 py-0.5 rounded bg-black/40 text-amber-200">npx cap run ios/android</code>.
-                </p>
-              </div>
-            )}
-
-            {/* Success */}
-            {isDone && result?.data && (
-              <div
-                className="rounded-2xl p-4 border"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(229,62,62,0.10), rgba(124,58,237,0.10))',
-                  borderColor: 'rgba(229,62,62,0.35)',
-                }}
-              >
-                <div className="flex gap-3 items-start">
-                  <div
-                    className="h-9 w-9 rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #e53e3e, #7c3aed)' }}
-                  >
-                    <CheckCircle2 className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="text-sm flex-1">
-                    <p className="font-semibold text-white">Calibrazione completata</p>
-                    <div className="flex items-baseline gap-2 mt-1">
-                      <span
-                        className="text-3xl font-bold bg-clip-text text-transparent"
-                        style={{ backgroundImage: 'linear-gradient(90deg, #f87171, #c4b5fd)' }}
-                      >
-                        {result.data.resting_hr.toFixed(0)}
-                      </span>
-                      <span className="text-white/50 text-xs uppercase tracking-wider">bpm resting</span>
-                    </div>
-                    <p className="text-white/50 text-xs mt-1">
-                      σ {(result.data.std_resting_hr ?? 0).toFixed(1)} · {result.data.resting_hr_history.length} campioni · {result.data.source}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Error */}
-            {result && result.status !== 'granted' && (
-              <div className="flex gap-3 p-3.5 rounded-xl bg-red-500/10 border border-red-500/25 text-sm">
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-400" />
-                <p className="text-red-100/85">{result.error ?? 'Permesso negato'}</p>
-              </div>
-            )}
-
-            {/* CTA */}
-            <Button
-              onClick={handleConnect}
-              disabled={loading || !native}
-              className="w-full h-12 rounded-full text-white font-semibold border-0 relative overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:scale-[1.02] active:scale-[0.98]"
-              style={{
-                background: 'linear-gradient(90deg, #e53e3e 0%, #7c3aed 100%)',
-                boxShadow: loading || !native
-                  ? 'none'
-                  : '0 8px 32px -8px rgba(229,62,62,0.6), 0 4px 24px -4px rgba(124,58,237,0.5), inset 0 1px 0 rgba(255,255,255,0.15)',
-              }}
+      <div className="relative w-full max-w-md">
+        <div className="rounded-sm border border-border/60 bg-card/80 backdrop-blur-xl p-10 space-y-8">
+          {/* Header */}
+          <div className="flex flex-col items-center text-center gap-5">
+            <div
+              className="relative h-16 w-16 rounded-full flex items-center justify-center bg-primary/[0.08] border border-primary/20"
+              style={{ animation: 'hc-ring-breath 2.8s ease-in-out infinite' }}
             >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Lettura in corso…
-                </span>
-              ) : isDone ? (
-                'Continua'
-              ) : (
-                <>
-                  <Heart className="h-4 w-4 fill-current" />
-                  Connetti smartwatch
-                </>
-              )}
-            </Button>
+              <Heart
+                className="h-7 w-7 fill-current text-primary"
+                style={{ animation: 'hc-noir-pulse 1.6s ease-in-out infinite' }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+                HeartSync · Calibrazione
+              </p>
+              <h1 className="font-display text-4xl text-foreground leading-[1.05]">
+                Il tuo cuore,<br />
+                <em className="text-primary not-italic font-display">la tua firma.</em>
+              </h1>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                Leggiamo la tua baseline cardiaca dagli ultimi 7 giorni —
+                via HealthKit o Health Connect.
+              </p>
+            </div>
           </div>
+
+          {/* Divider */}
+          <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+
+          {/* Info rows */}
+          <div className="space-y-5 text-sm">
+            <div className="flex gap-4">
+              <Activity className="h-4 w-4 text-primary shrink-0 mt-1" strokeWidth={1.5} />
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">Cosa leggiamo</p>
+                <p className="text-muted-foreground leading-relaxed">
+                  Resting heart rate degli ultimi 7 giorni, niente di più.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <Shield className="h-4 w-4 text-primary shrink-0 mt-1" strokeWidth={1.5} />
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">Privacy</p>
+                <p className="text-muted-foreground leading-relaxed">
+                  I dati restano sul dispositivo. Salviamo solo media e deviazione standard.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Native required */}
+          {!native && (
+            <div className="flex gap-3 p-4 border border-border bg-muted/40 text-sm">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" strokeWidth={1.5} />
+              <p className="text-muted-foreground leading-relaxed">
+                Build nativa richiesta. In anteprima web i dati non sono disponibili: esporta su GitHub e usa{' '}
+                <code className="px-1.5 py-0.5 bg-background/60 text-foreground/80 text-xs">npx cap run ios/android</code>.
+              </p>
+            </div>
+          )}
+
+          {/* Success */}
+          {isDone && result?.data && (
+            <div className="border border-primary/30 bg-primary/[0.04] p-5">
+              <div className="flex items-start gap-4">
+                <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-1" strokeWidth={1.5} />
+                <div className="flex-1 space-y-2">
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    Calibrazione completata
+                  </p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-display text-5xl text-primary leading-none">
+                      {result.data.resting_hr.toFixed(0)}
+                    </span>
+                    <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                      bpm resting
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground/80 font-mono">
+                    σ {(result.data.std_resting_hr ?? 0).toFixed(1)} · {result.data.resting_hr_history.length} campioni · {result.data.source}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Error */}
+          {result && result.status !== 'granted' && (
+            <div className="flex gap-3 p-4 border border-destructive/40 bg-destructive/[0.06] text-sm">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-destructive" strokeWidth={1.5} />
+              <p className="text-foreground/85 leading-relaxed">{result.error ?? 'Permesso negato'}</p>
+            </div>
+          )}
+
+          {/* CTA */}
+          <Button
+            onClick={handleConnect}
+            disabled={loading || !native}
+            className="w-full h-12 rounded-sm bg-primary text-primary-foreground hover:bg-primary/90 font-medium tracking-wide uppercase text-xs disabled:opacity-30 transition-all"
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Lettura in corso
+              </span>
+            ) : isDone ? (
+              'Continua'
+            ) : (
+              'Connetti smartwatch'
+            )}
+          </Button>
         </div>
       </div>
     </div>

@@ -681,9 +681,11 @@ const Discovery = () => {
             {/* Photo / silhouette — blur in phase 1, sharp in phase 2 */}
             <div className="relative mx-auto h-40 w-40">
               <div
-                className="absolute inset-0 rounded-full overflow-hidden ring-4 ring-primary/40 shadow-[0_0_60px_rgba(255,80,120,0.45)]"
+                className="absolute inset-0 rounded-full overflow-hidden ring-1 ring-primary/40 shadow-[0_0_80px_-10px_hsl(var(--primary)/0.45)]"
                 style={{
-                  filter: revealPhase === 'anonymous' ? 'blur(20px) brightness(0.7)' : 'blur(0px) brightness(1)',
+                  filter: revealPhase === 'anonymous'
+                    ? 'blur(20px) brightness(0.55) grayscale(1)'
+                    : 'blur(0px) brightness(1) grayscale(0)',
                   transition: 'filter 1.2s ease-out',
                 }}
               >
@@ -694,7 +696,7 @@ const Discovery = () => {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="h-full w-full bg-gradient-to-br from-primary/60 to-secondary" />
+                  <div className="h-full w-full bg-gradient-to-br from-primary/40 to-secondary" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
               </div>
@@ -703,7 +705,7 @@ const Discovery = () => {
               {revealPhase === 'anonymous' && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <Heart
-                    className="h-14 w-14 text-primary fill-current drop-shadow-[0_0_12px_rgba(255,80,120,0.9)]"
+                    className="h-14 w-14 text-primary fill-current drop-shadow-[0_0_18px_hsl(var(--primary)/0.85)]"
                     style={{ animation: 'reveal-pulse 1s ease-in-out infinite' }}
                   />
                 </div>
