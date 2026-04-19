@@ -181,7 +181,7 @@ const Discovery = () => {
       // 3. Candidate profiles
       const { data: list, error: pErr } = await supabase
         .from('profiles')
-        .select('id, name, age, bio, photos')
+        .select('id, name, age, bio, photos, interests, distance_km')
         .not('id', 'in', `(${[...excluded].join(',')})`)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -199,6 +199,8 @@ const Discovery = () => {
         age: p.age,
         bio: p.bio,
         photos: p.photos ?? [],
+        interests: p.interests ?? undefined,
+        distance_km: p.distance_km ?? null,
         isMock: false,
       }));
 

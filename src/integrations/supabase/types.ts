@@ -128,8 +128,10 @@ export type Database = {
           baseline_updated_at: string | null
           bio: string | null
           created_at: string
+          distance_km: number | null
           gender: string | null
           id: string
+          interests: string[] | null
           looking_for: string | null
           name: string | null
           photos: string[]
@@ -142,8 +144,10 @@ export type Database = {
           baseline_updated_at?: string | null
           bio?: string | null
           created_at?: string
+          distance_km?: number | null
           gender?: string | null
           id: string
+          interests?: string[] | null
           looking_for?: string | null
           name?: string | null
           photos?: string[]
@@ -156,8 +160,10 @@ export type Database = {
           baseline_updated_at?: string | null
           bio?: string | null
           created_at?: string
+          distance_km?: number | null
           gender?: string | null
           id?: string
+          interests?: string[] | null
           looking_for?: string | null
           name?: string | null
           photos?: string[]
