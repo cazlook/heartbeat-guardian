@@ -14,7 +14,7 @@
  * `DEFAULT_CONFIG`.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import { Heart, Loader2, LogOut, Bug } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,7 +46,7 @@ interface ProfileCard {
 type Intensity = 'low' | 'medium' | 'high';
 
 const REACTION_COOLDOWN_MS = 30_000; // don't write more than 1 row per profile / 30s
-const VISIBILITY_THRESHOLD = 0.6;    // when card is "in view"
+const VISIBILITY_THRESHOLD = 0.3;    // when card is "in view"
 
 const intensityFromZ = (z: number): Intensity => {
   if (z >= DEFAULT_CONFIG.strong_z_threshold) return 'high';
@@ -284,6 +284,15 @@ const Discovery = () => {
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   useEffect(() => {
     if (profiles.length === 0) return;
+
+    // Fallback: immediately set the first profile as active so the debug panel
+    // and reaction pipeline work even before the observer fires.
+    if (!activeProfileRef.current) {
+      const firstId = profiles[0].id;
+      activeProfileRef.current = firstId;
+      setActiveProfileId(firstId);
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         const top = entries
@@ -291,15 +300,14 @@ const Discovery = () => {
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
         if (top) {
           const id = (top.target as HTMLElement).dataset.profileId ?? null;
-          if (id !== activeProfileRef.current) {
+          if (id && id !== activeProfileRef.current) {
             activeProfileRef.current = id;
             setActiveProfileId(id);
-            // Reset reaction window when changing profile
             reactionWindowRef.current = null;
           }
         }
       },
-      { threshold: [0, 0.3, VISIBILITY_THRESHOLD, 0.9, 1] },
+      { threshold: [0, 0.15, VISIBILITY_THRESHOLD, 0.6, 0.9, 1] },
     );
     cardRefs.current.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
@@ -516,12 +524,11 @@ interface ProfileCardViewProps {
   isPulsing: boolean;
 }
 
-const ProfileCardView = ({
-  ref,
+const ProfileCardView = forwardRef<HTMLDivElement, ProfileCardViewProps>(({
   profile,
   isActive,
   isPulsing,
-}: ProfileCardViewProps & { ref?: (el: HTMLDivElement | null) => void }) => {
+}, ref) => {
   const photo = profile.photos?.[0];
   return (
     <div ref={ref} data-profile-id={profile.id}>
@@ -569,6 +576,7 @@ const ProfileCardView = ({
       </Card>
     </div>
   );
-};
+});
+ProfileCardView.displayName = 'ProfileCardView';
 
 export default Discovery;
