@@ -278,6 +278,7 @@ const Discovery = () => {
     }
 
     const win = reactionWindowRef.current;
+    console.log('[Discovery] handleSample decision', { bpm: sample.bpm, decision: reading.decision, reason: reading.reason_code, z: reading.z_score, profile: targetProfile });
     if (reading.decision === 'ACCEPTED') {
       if (!win || win.profileId !== targetProfile) {
         reactionWindowRef.current = {
