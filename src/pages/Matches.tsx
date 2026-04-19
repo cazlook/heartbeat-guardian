@@ -25,7 +25,6 @@ const Matches = () => {
   const [loading, setLoading] = useState(true);
   const [matches, setMatches] = useState<MatchRow[]>([]);
 
-  // Mark all matches as seen as soon as the user opens this page.
   useEffect(() => {
     markAllSeen();
   }, [markAllSeen]);
@@ -85,35 +84,47 @@ const Matches = () => {
   }, [user]);
 
   return (
-    <div className="min-h-screen p-4 bg-background">
-      <div className="max-w-xl mx-auto space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Matches</h1>
-          <Button asChild size="sm" variant="ghost">
+    <div className="min-h-screen p-6 bg-background">
+      <div className="max-w-xl mx-auto space-y-6">
+        <div className="flex items-end justify-between border-b border-border/60 pb-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+              HeartSync
+            </p>
+            <h1 className="font-display text-4xl text-foreground leading-none mt-1">
+              Matches
+            </h1>
+          </div>
+          <Button asChild size="sm" variant="ghost" className="text-muted-foreground hover:text-foreground uppercase tracking-wider text-xs">
             <Link to="/discovery">Discovery</Link>
           </Button>
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-10">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <div className="flex justify-center py-16">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
         ) : matches.length === 0 ? (
-          <Card className="p-6 text-sm text-muted-foreground text-center">
-            Nessun match per ora. Continua a esplorare in Discovery.
-          </Card>
+          <div className="border border-border/60 rounded-sm p-8 text-center text-sm text-muted-foreground italic">
+            Nessun match per ora.<br />
+            Continua a esplorare in Discovery.
+          </div>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-2">
             {matches.map((m) => {
               const photo = m.other?.photos?.[0];
               const name = m.other?.name ?? 'Senza nome';
               return (
                 <li key={m.id}>
-                  <Link to={`/chat/${m.id}`} className="block">
-                    <Card className="p-3 flex items-center gap-3 hover:shadow-md transition-shadow">
-                      <div className="h-14 w-14 rounded-full overflow-hidden bg-muted shrink-0">
+                  <Link to={`/chat/${m.id}`} className="block group">
+                    <Card className="rounded-sm p-4 flex items-center gap-4 bg-card border border-border/60 group-hover:border-primary/40 transition-colors">
+                      <div className="h-14 w-14 rounded-sm overflow-hidden bg-muted shrink-0">
                         {photo ? (
-                          <img src={photo} alt={name} className="h-full w-full object-cover" />
+                          <img
+                            src={photo}
+                            alt={name}
+                            className="h-full w-full object-cover photo-color"
+                          />
                         ) : (
                           <div className="h-full w-full flex items-center justify-center text-muted-foreground text-xs">
                             ?
@@ -121,14 +132,20 @@ const Matches = () => {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold truncate">{name}</div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="font-display text-xl text-foreground truncate leading-tight">
+                          {name}
+                        </div>
+                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5">
                           {new Date(m.created_at).toLocaleDateString()}
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 text-primary font-bold">
-                        <Heart className="h-4 w-4 fill-current" />
-                        <span>{m.cardiac_score.toFixed(1)}</span>
+                      <div className="flex flex-col items-end">
+                        <span className="font-mono-bpm text-2xl text-primary leading-none">
+                          {m.cardiac_score.toFixed(1)}
+                        </span>
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground mt-1">
+                          Score
+                        </span>
                       </div>
                     </Card>
                   </Link>

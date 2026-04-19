@@ -615,11 +615,9 @@ const Discovery = () => {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/70 border-b border-border/50">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-bold tracking-tight flex items-center gap-2">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-cardiac shadow-elegant">
-              <Heart className="h-3.5 w-3.5 fill-current text-primary-foreground" />
-            </span>
-            <span className="text-gradient-cardiac">HeartSync</span>
+          <h1 className="font-display text-2xl tracking-tight flex items-center gap-2 text-foreground">
+            <Heart className="h-4 w-4 fill-current text-primary" strokeWidth={1.5} />
+            <span>HeartSync</span>
           </h1>
           <div className="flex items-center gap-1">
             <Button size="sm" variant="ghost" onClick={() => setEditOpen(true)} aria-label="Modifica profilo">
@@ -630,7 +628,7 @@ const Discovery = () => {
                 Matches
                 {unseenMatches > 0 && (
                   <span
-                    className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-elegant"
+                    className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-medium flex items-center justify-center"
                     aria-label={`${unseenMatches} nuovi match`}
                   >
                     {unseenMatches > 9 ? '9+' : unseenMatches}
@@ -681,10 +679,10 @@ const Discovery = () => {
             {/* Photo / silhouette — blur in phase 1, sharp in phase 2 */}
             <div className="relative mx-auto h-40 w-40">
               <div
-                className="absolute inset-0 rounded-full overflow-hidden ring-1 ring-primary/40 shadow-[0_0_80px_-10px_hsl(var(--primary)/0.45)]"
+                className="absolute inset-0 rounded-full overflow-hidden ring-1 ring-primary/40"
                 style={{
                   filter: revealPhase === 'anonymous'
-                    ? 'blur(20px) brightness(0.55) grayscale(1)'
+                    ? 'blur(20px) brightness(0.5) grayscale(1)'
                     : 'blur(0px) brightness(1) grayscale(0)',
                   transition: 'filter 1.2s ease-out',
                 }}
@@ -696,17 +694,17 @@ const Discovery = () => {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="h-full w-full bg-gradient-to-br from-primary/40 to-secondary" />
+                  <div className="h-full w-full bg-secondary" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
               </div>
 
-              {/* Pulsing heart overlay — only during anonymous phase */}
               {revealPhase === 'anonymous' && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <Heart
-                    className="h-14 w-14 text-primary fill-current drop-shadow-[0_0_18px_hsl(var(--primary)/0.85)]"
+                    className="h-12 w-12 text-primary fill-current"
                     style={{ animation: 'reveal-pulse 1s ease-in-out infinite' }}
+                    strokeWidth={1.5}
                   />
                 </div>
               )}
@@ -891,8 +889,8 @@ const ProfileCardView = forwardRef<HTMLDivElement, ProfileCardViewProps>(({
   return (
     <div ref={ref} data-profile-id={profile.id}>
       <Card
-        className={`group relative overflow-hidden cursor-pointer border-border/50 bg-gradient-surface shadow-soft transition-all duration-300 hover:border-border ${
-          isActive ? 'shadow-elegant ring-1 ring-primary/30 scale-[1.005]' : ''
+        className={`group relative overflow-hidden cursor-pointer rounded-sm border bg-card transition-colors duration-300 ${
+          isActive ? 'border-primary/40' : 'border-border/60 hover:border-border'
         }`}
         onClick={onOpenDetail}
         role="button"
@@ -909,50 +907,46 @@ const ProfileCardView = forwardRef<HTMLDivElement, ProfileCardViewProps>(({
             <img
               src={photo}
               alt={profile.name ?? 'Profilo'}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+              className={`w-full h-full object-cover transition-all duration-700 ${
+                isPulsing ? 'photo-color' : 'photo-noir'
+              }`}
               loading="lazy"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-secondary">
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-secondary text-xs uppercase tracking-widest">
               Nessuna foto
             </div>
           )}
 
-          {/* Distance pill */}
           {profile.distance_km != null && (
-            <div className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-background/60 backdrop-blur-md text-[11px] font-medium border border-border/40">
-              <MapPin className="h-3 w-3" />
-              <span>{profile.distance_km} km</span>
+            <div className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-sm bg-background/70 backdrop-blur-md text-[10px] font-medium border border-border/40 uppercase tracking-wider text-foreground/80">
+              <MapPin className="h-3 w-3" strokeWidth={1.5} />
+              <span className="font-mono-bpm">{profile.distance_km}km</span>
             </div>
           )}
 
-          {/* Heartbeat pulse */}
           <div
             className={`absolute top-3 right-3 transition-opacity duration-300 ${
               isPulsing ? 'opacity-100' : 'opacity-0'
             }`}
             aria-hidden
           >
-            <span className="relative flex h-11 w-11 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-primary/40 animate-ping" />
-              <span className="relative inline-flex h-11 w-11 items-center justify-center rounded-full bg-gradient-cardiac shadow-elegant">
-                <Heart className="h-5 w-5 text-primary-foreground fill-current heartbeat" />
-              </span>
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-primary bg-background/70 backdrop-blur">
+              <Heart className="h-4 w-4 text-primary fill-current" strokeWidth={1.5} />
             </span>
           </div>
 
-          {/* Bottom overlay with name + interests */}
-          <div className="absolute bottom-0 inset-x-0 p-5 pt-16 bg-gradient-overlay">
+          <div className="absolute bottom-0 inset-x-0 p-5 pt-16 bg-gradient-to-t from-background via-background/70 to-transparent">
             <div className="flex items-end justify-between gap-3">
-              <h2 className="text-2xl font-bold tracking-tight text-foreground">
+              <h2 className="font-display text-3xl tracking-tight text-foreground leading-none">
                 {profile.name ?? 'Senza nome'}
                 {profile.age != null && (
-                  <span className="font-light text-foreground/70"> · {profile.age}</span>
+                  <span className="text-foreground/60 italic"> · {profile.age}</span>
                 )}
               </h2>
               {isActive && (
-                <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-primary font-semibold">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-glow" />
+                <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.25em] text-primary font-medium">
+                  <span className="h-1 w-1 rounded-full bg-primary" />
                   Live
                 </span>
               )}
@@ -963,7 +957,7 @@ const ProfileCardView = forwardRef<HTMLDivElement, ProfileCardViewProps>(({
                   <Badge
                     key={tag}
                     variant="secondary"
-                    className="rounded-full text-[10px] px-2 py-0.5 bg-background/50 backdrop-blur border border-border/40 font-medium"
+                    className="rounded-sm text-[10px] px-2 py-0.5 bg-background/40 backdrop-blur border border-border/40 font-normal uppercase tracking-wider text-foreground/75"
                   >
                     {tag}
                   </Badge>
@@ -973,7 +967,7 @@ const ProfileCardView = forwardRef<HTMLDivElement, ProfileCardViewProps>(({
           </div>
         </div>
         {profile.bio && (
-          <div className="p-5 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+          <div className="p-5 text-sm text-muted-foreground line-clamp-2 leading-relaxed italic">
             {profile.bio}
           </div>
         )}
