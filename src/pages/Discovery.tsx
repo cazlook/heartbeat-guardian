@@ -612,6 +612,15 @@ const Discovery = () => {
                 </Button>
               </div>
 
+              <div className="grid grid-cols-2 gap-1.5">
+                <Button size="sm" variant="ghost" onClick={() => primeBaseline(12)}>
+                  Prime baseline
+                </Button>
+                <Button size="sm" variant="ghost" onClick={resetDebugSession}>
+                  Reset sessione
+                </Button>
+              </div>
+
               <div>
                 <div className="text-xs text-muted-foreground mb-1.5">Last 10 events</div>
                 <div className="max-h-48 overflow-y-auto rounded border border-border bg-muted/30 text-[11px] font-mono">
