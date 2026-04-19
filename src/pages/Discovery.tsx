@@ -190,6 +190,7 @@ const Discovery = () => {
   // ── Persist a reaction (debounced per profile) ─────────────────────
   const persistReaction = useCallback(
     async (profileId: string, reading: ReadingLog, peakBpm: number, durationMs: number) => {
+      console.log('[Discovery] persistReaction called', profileId);
       if (!user || reading.z_score == null) return;
       const now = Date.now();
       const last = lastWriteRef.current.get(profileId) ?? 0;
