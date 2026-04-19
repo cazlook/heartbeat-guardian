@@ -32,7 +32,8 @@ import {
   type SessionState,
   type SmartWatchData,
 } from '@/engine';
-import { HeartRatePoller, type LiveHrSample } from '@/engine/heartRatePoller';
+import { type LiveHrSample } from '@/engine/heartRatePoller';
+import { useBiometricSource } from '@/hooks/useBiometricSource';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMatchReveal } from '@/components/MatchRevealProvider';
 import { MOCK_PROFILES, MockBpmSimulator, isMockProfileId } from '@/data/mockProfiles';
@@ -122,7 +123,7 @@ const Discovery = () => {
 
   const sessionRef = useRef<SessionState | null>(null);
   const sessionOwnerRef = useRef<string | null>(null);
-  const pollerRef = useRef<HeartRatePoller | null>(null);
+  // Native HR is now sourced via useBiometricSource (Health Connect / HealthKit).
   const activeProfileRef = useRef<string | null>(null);
   const reactionWindowRef = useRef<{
     profileId: string;
