@@ -1,17 +1,10 @@
-/**
- * EditOwnProfileSheet — form inline per modificare il proprio profilo.
- *
- * Salva su `profiles` (Supabase): name, bio, photos[]. Lo schema attuale
- * non ha colonna `interests` né `distance` quindi non li salviamo qui —
- * gli interessi appaiono solo per i profili mock di esempio.
- */
-
 import { useEffect, useState, type FormEvent } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { X, Plus, Loader2, Heart } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,6 +14,8 @@ interface OwnProfile {
   name: string;
   bio: string;
   photos: string[];
+  interests: string[];
+  distance_km: number | null;
 }
 
 interface Props {
@@ -29,14 +24,27 @@ interface Props {
   onSaved?: () => void;
 }
 
+const splitInterests = (raw: string): string[] =>
+  raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+
 export const EditOwnProfileSheet = ({ open, onOpenChange, onSaved }: Props) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<OwnProfile>({ name: '', bio: '', photos: [] });
+  const [form, setForm] = useState<OwnProfile>({
+    name: '',
+    bio: '',
+    photos: [],
+    interests: [],
+    distance_km: null,
+  });
+  const [interestsInput, setInterestsInput] = useState('');
   const [newPhoto, setNewPhoto] = useState('');
 
-  // Carica i dati attuali ogni volta che si apre
   useEffect(() => {
     if (!open || !user) return;
     let cancelled = false;
@@ -44,18 +52,22 @@ export const EditOwnProfileSheet = ({ open, onOpenChange, onSaved }: Props) => {
     (async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('name, bio, photos')
+        .select('name, bio, photos, interests, distance_km')
         .eq('id', user.id)
         .maybeSingle();
       if (cancelled) return;
       if (error) {
         toast({ title: 'Errore caricamento', description: error.message, variant: 'destructive' });
       } else {
+        const interests = data?.interests ?? [];
         setForm({
           name: data?.name ?? '',
           bio: data?.bio ?? '',
           photos: data?.photos ?? [],
+          interests,
+          distance_km: data?.distance_km ?? null,
         });
+        setInterestsInput(interests.join(', '));
       }
       setLoading(false);
     })();
@@ -79,16 +91,24 @@ export const EditOwnProfileSheet = ({ open, onOpenChange, onSaved }: Props) => {
     setForm((f) => ({ ...f, photos: f.photos.filter((_, idx) => idx !== i) }));
   };
 
+  const handleInterestsChange = (raw: string) => {
+    setInterestsInput(raw);
+    setForm((f) => ({ ...f, interests: splitInterests(raw) }));
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
     setSaving(true);
+    const interests = splitInterests(interestsInput);
     const { error } = await supabase
       .from('profiles')
       .update({
         name: form.name.trim() || null,
         bio: form.bio.trim() || null,
         photos: form.photos,
+        interests: interests.length > 0 ? interests : null,
+        distance_km: form.distance_km,
       })
       .eq('id', user.id);
     setSaving(false);
@@ -151,6 +171,48 @@ export const EditOwnProfileSheet = ({ open, onOpenChange, onSaved }: Props) => {
                 <p className="text-xs text-muted-foreground text-right">
                   {form.bio.length}/300
                 </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="own-interests">Interessi</Label>
+                <Input
+                  id="own-interests"
+                  value={interestsInput}
+                  onChange={(e) => handleInterestsChange(e.target.value)}
+                  placeholder="Musica, Cinema, Viaggi (separati da virgola)"
+                />
+                {form.interests.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {form.interests.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="rounded-full text-[11px] px-2.5 py-0.5 bg-secondary/80 backdrop-blur border border-border/50"
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">Max 12 interessi</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="own-distance">Distanza (km)</Label>
+                <Input
+                  id="own-distance"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  max={500}
+                  step={0.1}
+                  value={form.distance_km ?? ''}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setForm({ ...form, distance_km: v === '' ? null : Number(v) });
+                  }}
+                  placeholder="Es. 3.5"
+                />
               </div>
 
               <div className="space-y-3">
