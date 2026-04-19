@@ -91,6 +91,8 @@ const intensityFromZ = (z: number): Intensity => {
 interface RevealState {
   matchId: string;
   cardiacScore: number;
+  photo: string | null;
+  name: string | null;
 }
 
 interface DebugEvent {
@@ -272,7 +274,13 @@ const Discovery = () => {
         }
         if (data?.matched && data.match_id) {
           revealedPairRef.current.add(profileId);
-          setReveal({ matchId: data.match_id, cardiacScore: Number(data.cardiac_score ?? 0) });
+          const match = profiles.find((p) => p.id === profileId) ?? null;
+          setReveal({
+            matchId: data.match_id,
+            cardiacScore: Number(data.cardiac_score ?? 0),
+            photo: match?.photos?.[0] ?? null,
+            name: match?.name ?? null,
+          });
         }
       } catch (e) {
         console.warn('[Discovery] check-match exception', e);
