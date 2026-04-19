@@ -14,10 +14,11 @@
  * `DEFAULT_CONFIG`.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Heart, Loader2, LogOut } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Heart, Loader2, LogOut, Bug } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -31,6 +32,8 @@ import {
 } from '@/engine';
 import { HeartRatePoller, type LiveHrSample } from '@/engine/heartRatePoller';
 import { Link, useNavigate } from 'react-router-dom';
+
+const IS_DEV = import.meta.env.DEV;
 
 interface ProfileCard {
   id: string;
@@ -56,6 +59,14 @@ interface RevealState {
   cardiacScore: number;
 }
 
+interface DebugEvent {
+  t: number;
+  bpm: number;
+  z: number | null;
+  decision: string;
+  reason: string;
+}
+
 const Discovery = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -65,6 +76,11 @@ const Discovery = () => {
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [pulseProfileId, setPulseProfileId] = useState<string | null>(null);
   const [reveal, setReveal] = useState<RevealState | null>(null);
+
+  // Debug-only state (rendered only when IS_DEV)
+  const [debugOpen, setDebugOpen] = useState(false);
+  const [debugBpm, setDebugBpm] = useState(70);
+  const [debugLog, setDebugLog] = useState<DebugEvent[]>([]);
 
   const sessionRef = useRef<SessionState | null>(null);
   const pollerRef = useRef<HeartRatePoller | null>(null);
@@ -77,6 +93,7 @@ const Discovery = () => {
   } | null>(null);
   const lastWriteRef = useRef<Map<string, number>>(new Map());
   const revealedPairRef = useRef<Set<string>>(new Set());
+  const handleSampleRef = useRef<((s: LiveHrSample) => void) | null>(null);
 
   // ── Load profiles & bootstrap session ──────────────────────────────
   useEffect(() => {
@@ -191,6 +208,60 @@ const Discovery = () => {
     [user],
   );
 
+  // ── Sample handler — shared by poller and debug panel ──────────────
+  const handleSample = useCallback((sample: LiveHrSample) => {
+    const session = sessionRef.current;
+    const targetProfile = activeProfileRef.current;
+    if (!session || !targetProfile) return;
+
+    const reading = processReading(sample.bpm, session, {
+      app_in_foreground: true,
+      in_discovery_screen: true,
+      signal_quality: 0.9,
+      // accelerometer omitted → engine applies stricter no-accel rules
+    });
+
+    if (IS_DEV) {
+      setDebugLog((prev) => {
+        const next: DebugEvent = {
+          t: sample.sampleTime,
+          bpm: sample.bpm,
+          z: reading.z_score,
+          decision: reading.decision,
+          reason: reading.reason_code,
+        };
+        return [next, ...prev].slice(0, 10);
+      });
+    }
+
+    const win = reactionWindowRef.current;
+    if (reading.decision === 'ACCEPTED') {
+      if (!win || win.profileId !== targetProfile) {
+        reactionWindowRef.current = {
+          profileId: targetProfile,
+          startedAt: sample.sampleTime,
+          peakBpm: sample.bpm,
+          peakZ: reading.z_score ?? 0,
+        };
+      } else {
+        win.peakBpm = Math.max(win.peakBpm, sample.bpm);
+        win.peakZ = Math.max(win.peakZ, reading.z_score ?? 0);
+      }
+      setPulseProfileId(targetProfile);
+      window.setTimeout(() => {
+        setPulseProfileId((cur) => (cur === targetProfile ? null : cur));
+      }, 1200);
+
+      const w = reactionWindowRef.current!;
+      void persistReaction(targetProfile, reading, w.peakBpm, sample.sampleTime - w.startedAt);
+    } else if (win && win.profileId === targetProfile) {
+      reactionWindowRef.current = null;
+    }
+  }, [persistReaction]);
+
+  // Keep latest handler accessible to debug panel without re-subscribing poller
+  useEffect(() => { handleSampleRef.current = handleSample; }, [handleSample]);
+
   // ── Heart rate poller wired to engine ──────────────────────────────
   useEffect(() => {
     if (!user) return;
@@ -198,44 +269,7 @@ const Discovery = () => {
     pollerRef.current = poller;
 
     const off = poller.on((sample: LiveHrSample) => {
-      const session = sessionRef.current;
-      const targetProfile = activeProfileRef.current;
-      if (!session || !targetProfile) return;
-
-      const reading = processReading(sample.bpm, session, {
-        app_in_foreground: true,
-        in_discovery_screen: true,
-        signal_quality: 0.9,
-        // accelerometer omitted → engine applies stricter no-accel rules
-      });
-
-      const win = reactionWindowRef.current;
-      if (reading.decision === 'ACCEPTED') {
-        // Aggregate within the same sustained window for the same profile
-        if (!win || win.profileId !== targetProfile) {
-          reactionWindowRef.current = {
-            profileId: targetProfile,
-            startedAt: sample.sampleTime,
-            peakBpm: sample.bpm,
-            peakZ: reading.z_score ?? 0,
-          };
-        } else {
-          win.peakBpm = Math.max(win.peakBpm, sample.bpm);
-          win.peakZ = Math.max(win.peakZ, reading.z_score ?? 0);
-        }
-        // Heartbeat pulse feedback
-        setPulseProfileId(targetProfile);
-        window.setTimeout(() => {
-          setPulseProfileId((cur) => (cur === targetProfile ? null : cur));
-        }, 1200);
-
-        // Persist current peak (debounced inside)
-        const w = reactionWindowRef.current!;
-        void persistReaction(targetProfile, reading, w.peakBpm, sample.sampleTime - w.startedAt);
-      } else if (win && win.profileId === targetProfile) {
-        // Window closed — reset
-        reactionWindowRef.current = null;
-      }
+      handleSampleRef.current?.(sample);
     });
 
     poller.start();
@@ -275,6 +309,31 @@ const Discovery = () => {
     if (el) cardRefs.current.set(id, el);
     else cardRefs.current.delete(id);
   }, []);
+
+  // ── Debug: inject a synthetic BPM through the same pipeline ────────
+  const injectDebugBpm = useCallback((bpm: number) => {
+    const now = Date.now();
+    handleSampleRef.current?.({
+      bpm,
+      sampleTime: now,
+      receivedAt: now,
+      latencyMs: 0,
+      source: 'mock',
+    });
+  }, []);
+
+  const triggerSpike = useCallback(() => {
+    // Quick burst: several high samples to satisfy sustained-duration filter,
+    // then return to resting.
+    const peak = 110;
+    const rest = 70;
+    let i = 0;
+    const id = window.setInterval(() => {
+      injectDebugBpm(i < 6 ? peak : rest);
+      i += 1;
+      if (i >= 8) window.clearInterval(id);
+    }, 250);
+  }, [injectDebugBpm]);
 
   // ── Render ─────────────────────────────────────────────────────────
   if (loading) {
@@ -361,6 +420,91 @@ const Discovery = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {IS_DEV && (
+        <>
+          <button
+            type="button"
+            onClick={() => setDebugOpen((v) => !v)}
+            className="fixed bottom-4 right-4 z-40 h-11 w-11 rounded-full bg-secondary text-secondary-foreground shadow-lg flex items-center justify-center border border-border"
+            aria-label="Debug"
+          >
+            <Bug className="h-4 w-4" />
+          </button>
+          {debugOpen && (
+            <div className="fixed bottom-20 right-4 z-40 w-[320px] max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-card text-card-foreground shadow-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Debug — fake BPM
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  active: {activeProfileId ? '✓' : '—'}
+                </span>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs text-muted-foreground">BPM</span>
+                  <span className="text-sm font-mono font-semibold">{debugBpm}</span>
+                </div>
+                <Slider
+                  value={[debugBpm]}
+                  min={50}
+                  max={140}
+                  step={1}
+                  onValueChange={(v) => setDebugBpm(v[0])}
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="w-full mt-2"
+                  onClick={() => injectDebugBpm(debugBpm)}
+                  disabled={!activeProfileId}
+                >
+                  Inietta {debugBpm} BPM
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-4 gap-1.5">
+                <Button size="sm" variant="outline" onClick={() => injectDebugBpm(70)} disabled={!activeProfileId}>
+                  70
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => injectDebugBpm(82)} disabled={!activeProfileId}>
+                  82
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => injectDebugBpm(95)} disabled={!activeProfileId}>
+                  95
+                </Button>
+                <Button size="sm" variant="outline" onClick={triggerSpike} disabled={!activeProfileId}>
+                  Spike
+                </Button>
+              </div>
+
+              <div>
+                <div className="text-xs text-muted-foreground mb-1.5">Last 10 events</div>
+                <div className="max-h-48 overflow-y-auto rounded border border-border bg-muted/30 text-[11px] font-mono">
+                  {debugLog.length === 0 ? (
+                    <div className="p-2 text-muted-foreground">Nessun evento</div>
+                  ) : (
+                    debugLog.map((e) => (
+                      <div
+                        key={e.t}
+                        className={`px-2 py-1 border-b border-border/50 last:border-0 flex justify-between gap-2 ${
+                          e.decision === 'ACCEPTED' ? 'text-primary' : ''
+                        }`}
+                      >
+                        <span>{e.bpm}bpm</span>
+                        <span>z={e.z != null ? e.z.toFixed(2) : '—'}</span>
+                        <span className="truncate">{e.reason.replace(/^(ACCEPTED_|REJECTED_)/, '')}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
