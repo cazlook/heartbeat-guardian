@@ -721,32 +721,38 @@ const Discovery = () => {
             `}</style>
 
             {revealPhase === 'anonymous' ? (
-              <div className="space-y-3 animate-in fade-in duration-500">
-                <p className="text-xl font-semibold leading-snug">
-                  Qualcuno ha reagito a te...
+              <div className="space-y-4 animate-in fade-in duration-500">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+                  Risonanza cardiaca
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  Il vostro battito si è sincronizzato
+                <p className="font-display text-3xl text-foreground leading-tight">
+                  Qualcuno ha reagito a te.
                 </p>
-                <div className="mx-auto h-12 w-12 rounded-full border-2 border-primary/50 flex items-center justify-center">
-                  <span className="text-xl font-bold text-primary tabular-nums">{countdown}</span>
+                <p className="text-sm text-muted-foreground italic">
+                  Il vostro battito si è sincronizzato.
+                </p>
+                <div className="mx-auto h-12 w-12 rounded-full border border-primary/40 flex items-center justify-center">
+                  <span className="text-xl font-display text-primary tabular-nums">{countdown}</span>
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="space-y-1">
-                  <p className="text-2xl font-bold leading-snug">
+              <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="space-y-2">
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+                    Match rivelato
+                  </p>
+                  <p className="font-display text-4xl text-foreground leading-tight">
                     {reveal.name ?? 'Match anonimo'}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    I vostri cuori hanno reagito allo stesso modo
+                  <p className="text-sm text-muted-foreground italic">
+                    I vostri cuori hanno reagito allo stesso modo.
                   </p>
                 </div>
                 <div>
-                  <p className="text-4xl font-bold text-primary tabular-nums">
+                  <p className="font-display text-5xl text-primary tabular-nums leading-none">
                     {reveal.cardiacScore.toFixed(1)}
                   </p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-[0.25em] mt-2">
                     Cardiac score
                   </p>
                 </div>
