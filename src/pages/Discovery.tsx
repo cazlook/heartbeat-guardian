@@ -284,6 +284,15 @@ const Discovery = () => {
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   useEffect(() => {
     if (profiles.length === 0) return;
+
+    // Fallback: immediately set the first profile as active so the debug panel
+    // and reaction pipeline work even before the observer fires.
+    if (!activeProfileRef.current) {
+      const firstId = profiles[0].id;
+      activeProfileRef.current = firstId;
+      setActiveProfileId(firstId);
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         const top = entries
@@ -291,15 +300,14 @@ const Discovery = () => {
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
         if (top) {
           const id = (top.target as HTMLElement).dataset.profileId ?? null;
-          if (id !== activeProfileRef.current) {
+          if (id && id !== activeProfileRef.current) {
             activeProfileRef.current = id;
             setActiveProfileId(id);
-            // Reset reaction window when changing profile
             reactionWindowRef.current = null;
           }
         }
       },
-      { threshold: [0, 0.3, VISIBILITY_THRESHOLD, 0.9, 1] },
+      { threshold: [0, 0.15, VISIBILITY_THRESHOLD, 0.6, 0.9, 1] },
     );
     cardRefs.current.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
