@@ -69,6 +69,11 @@ const Discovery = () => {
   const [pulseProfileId, setPulseProfileId] = useState<string | null>(null);
   const [reveal, setReveal] = useState<RevealState | null>(null);
 
+  // Debug-only state (rendered only when IS_DEV)
+  const [debugOpen, setDebugOpen] = useState(false);
+  const [debugBpm, setDebugBpm] = useState(70);
+  const [debugLog, setDebugLog] = useState<DebugEvent[]>([]);
+
   const sessionRef = useRef<SessionState | null>(null);
   const pollerRef = useRef<HeartRatePoller | null>(null);
   const activeProfileRef = useRef<string | null>(null);
@@ -80,6 +85,7 @@ const Discovery = () => {
   } | null>(null);
   const lastWriteRef = useRef<Map<string, number>>(new Map());
   const revealedPairRef = useRef<Set<string>>(new Set());
+  const handleSampleRef = useRef<((s: LiveHrSample) => void) | null>(null);
 
   // ── Load profiles & bootstrap session ──────────────────────────────
   useEffect(() => {
