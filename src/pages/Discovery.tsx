@@ -33,6 +33,7 @@ import {
 } from '@/engine';
 import { HeartRatePoller, type LiveHrSample } from '@/engine/heartRatePoller';
 import { Link, useNavigate } from 'react-router-dom';
+import { useMatchReveal } from '@/components/MatchRevealProvider';
 
 // Debug mode: active in Vite dev OR when ?debug=1 is in the URL.
 // The Lovable preview serves a production build, so import.meta.env.DEV
@@ -516,8 +517,18 @@ const Discovery = () => {
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
           <h1 className="text-lg font-bold">Discovery</h1>
           <div className="flex items-center gap-1">
-            <Button asChild size="sm" variant="ghost">
-              <Link to="/matches">Matches</Link>
+            <Button asChild size="sm" variant="ghost" className="relative">
+              <Link to="/matches">
+                Matches
+                {unseenMatches > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center"
+                    aria-label={`${unseenMatches} nuovi match`}
+                  >
+                    {unseenMatches > 9 ? '9+' : unseenMatches}
+                  </span>
+                )}
+              </Link>
             </Button>
             <Button size="sm" variant="ghost" onClick={signOut} aria-label="Logout">
               <LogOut className="h-4 w-4" />
