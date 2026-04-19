@@ -111,6 +111,9 @@ const Discovery = () => {
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [pulseProfileId, setPulseProfileId] = useState<string | null>(null);
   const [reveal, setReveal] = useState<RevealState | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<ProfileDetail | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   // Debug-only state (rendered only when IS_DEV)
   const [debugOpen, setDebugOpen] = useState(false);
