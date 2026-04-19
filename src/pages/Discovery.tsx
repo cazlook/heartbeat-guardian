@@ -116,6 +116,25 @@ const Discovery = () => {
   const [reveal, setReveal] = useState<RevealState | null>(null);
   const [revealPhase, setRevealPhase] = useState<'anonymous' | 'revealed'>('anonymous');
   const [countdown, setCountdown] = useState(4);
+
+  // Two-phase reveal: 4s anonymous (silhouette + countdown) → revealed
+  useEffect(() => {
+    if (!reveal) {
+      setRevealPhase('anonymous');
+      setCountdown(4);
+      return;
+    }
+    setRevealPhase('anonymous');
+    setCountdown(4);
+    const tick = window.setInterval(() => {
+      setCountdown((c) => (c > 0 ? c - 1 : 0));
+    }, 1000);
+    const reveal_t = window.setTimeout(() => setRevealPhase('revealed'), 4000);
+    return () => {
+      window.clearInterval(tick);
+      window.clearTimeout(reveal_t);
+    };
+  }, [reveal]);
   const [selectedProfile, setSelectedProfile] = useState<ProfileDetail | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -675,7 +694,7 @@ const Discovery = () => {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="h-full w-full bg-gradient-to-br from-primary/60 to-purple-900" />
+                  <div className="h-full w-full bg-gradient-to-br from-primary/60 to-secondary" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
               </div>
