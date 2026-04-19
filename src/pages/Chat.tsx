@@ -250,7 +250,8 @@ const Chat = () => {
             </div>
             <span
               aria-hidden
-              className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-primary/80 ring-2 ring-background"
+              className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full ring-2 ring-background"
+              style={{ backgroundColor: '#d4a574' }}
             />
           </div>
 
