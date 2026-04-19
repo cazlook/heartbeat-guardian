@@ -289,7 +289,7 @@ export function processReading(
   const z = computeZScore(bpm, b.combined_mean, b.combined_std, config.min_std_clamp);
 
   // Step 9: Determine effective thresholds (penalize if no accelerometer)
-  const hasAccel = context.accelerometer_magnitude !== undefined;
+  const hasAccel = context.accelerometer_magnitude !== undefined || config.accelerometer_threshold >= 999;
   const { z_thresh, strong_z_thresh } = getEffectiveThresholds(hasAccel, config);
 
   // Step 10: Below threshold → reject
