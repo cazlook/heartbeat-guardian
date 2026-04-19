@@ -431,7 +431,7 @@ const Discovery = () => {
       app_in_foreground: true,
       in_discovery_screen: true,
       signal_quality: 0.9,
-    });
+    }, ENGINE_CONFIG);
     console.log('[Discovery] inject result:', JSON.stringify({
       decision: reading.decision,
       reason: reading.reason_code,
