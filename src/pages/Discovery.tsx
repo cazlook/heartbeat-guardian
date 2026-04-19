@@ -233,7 +233,7 @@ const Discovery = () => {
       in_discovery_screen: true,
       signal_quality: 0.9,
       // accelerometer omitted → engine applies stricter no-accel rules
-    });
+    }, ENGINE_CONFIG);
 
     if (IS_DEV) {
       setDebugLog((prev) => {
