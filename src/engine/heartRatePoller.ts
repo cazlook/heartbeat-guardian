@@ -102,7 +102,7 @@ export class HeartRatePoller {
         bpm, sampleTime, receivedAt: now, latencyMs: now - sampleTime, source: 'healthkit',
       };
       this.lastSampleTime = sampleTime;
-      log('HR_SAMPLE', sample);
+      log('HR_SAMPLE', { ...sample });
       this.emit(sample);
     }
   }
@@ -127,7 +127,7 @@ export class HeartRatePoller {
           bpm, sampleTime, receivedAt: now, latencyMs: now - sampleTime, source: 'health_connect',
         };
         this.lastSampleTime = sampleTime;
-        log('HR_SAMPLE', sample);
+        log('HR_SAMPLE', { ...sample });
         this.emit(sample);
       }
     }
