@@ -318,6 +318,50 @@ const Discovery = () => {
           ))
         )}
       </main>
+
+      {reveal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm p-6 animate-in fade-in duration-500"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="max-w-sm w-full text-center space-y-6">
+            <div className="relative mx-auto h-32 w-32 flex items-center justify-center">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-primary/30 animate-ping" />
+              <span className="absolute inline-flex h-24 w-24 rounded-full bg-primary/50" />
+              <span className="relative inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary">
+                <Heart className="h-10 w-10 text-primary-foreground fill-current" />
+              </span>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xl font-semibold leading-snug">
+                I vostri cuori hanno reagito allo stesso modo
+              </p>
+              <p className="text-3xl font-bold text-primary">
+                {reveal.cardiacScore.toFixed(1)}
+              </p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                Cardiac score
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button
+                size="lg"
+                onClick={() => {
+                  const id = reveal.matchId;
+                  setReveal(null);
+                  navigate(`/chat/${id}`);
+                }}
+              >
+                Vai alla chat
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setReveal(null)}>
+                Continua a esplorare
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
