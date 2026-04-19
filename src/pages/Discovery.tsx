@@ -354,6 +354,35 @@ const Discovery = () => {
     };
   }, [userId]);
 
+  // ── Mock BPM simulator ─────────────────────────────────────────────
+  // Per ogni profilo mock simula un BPM "del viewer" che fluttua attorno a
+  // bpm_baseline ± 5..15. Quando la card mock è attiva, iniettiamo questi
+  // valori nel pipeline come se fossero il nostro HR live (così l'engine
+  // produce decisioni varie e card diverse generano reazioni diverse).
+  // I profili reali continuano a usare il poller HealthKit/HC standard.
+  const mockSimulator = useMemo(() => new MockBpmSimulator(MOCK_PROFILES, 1000), []);
+  useEffect(() => {
+    mockSimulator.start();
+    const id = window.setInterval(() => {
+      const active = activeProfileRef.current;
+      if (!active || !isMockProfileId(active)) return;
+      const bpm = mockSimulator.getBpm(active);
+      if (bpm == null) return;
+      const now = Date.now();
+      handleSampleRef.current?.({
+        bpm: Math.round(bpm),
+        sampleTime: now,
+        receivedAt: now,
+        latencyMs: 0,
+        source: 'mock',
+      });
+    }, 1500);
+    return () => {
+      window.clearInterval(id);
+      mockSimulator.stop();
+    };
+  }, [mockSimulator]);
+
   // ── Track which card is in view (intersection observer) ────────────
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
