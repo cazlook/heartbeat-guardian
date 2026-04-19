@@ -31,7 +31,7 @@ const App = () => (
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/discovery" element={<ProtectedRoute><Discovery /></ProtectedRoute>} />
             <Route path="/matches" element={<ProtectedRoute><Matches /></ProtectedRoute>} />
-            <Route path="/chat/:matchId" element={<ProtectedRoute><ChatPlaceholder /></ProtectedRoute>} />
+            <Route path="/chat/:matchId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
             <Route path="/profile/setup" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
             <Route path="/debug" element={<ProtectedRoute><Debug /></ProtectedRoute>} />
 
