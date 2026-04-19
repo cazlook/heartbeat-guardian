@@ -215,9 +215,19 @@ const Discovery = () => {
       });
       if (error) {
         // Don't toast: surface only via console. The detection animation already gave feedback.
-        console.warn('[Discovery] insert reaction failed', error.message);
+        console.warn('[Discovery] insert reaction failed', error.message, error);
         return;
       }
+      // TEMP DEBUG: confirm insert success
+      console.log('[Discovery] ✅ reaction inserted', {
+        profile_id: profileId,
+        viewer_id: user.id,
+        z_score: reading.z_score,
+        peak_bpm: peakBpm,
+        intensity,
+        confidence,
+        duration_ms: Math.max(0, Math.round(durationMs)),
+      });
 
       // Check bilateral match
       if (revealedPairRef.current.has(profileId)) return;
