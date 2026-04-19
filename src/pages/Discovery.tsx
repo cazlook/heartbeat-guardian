@@ -385,13 +385,13 @@ const Discovery = () => {
       in_discovery_screen: true,
       signal_quality: 0.9,
     });
-    console.log('[Discovery] inject result:', {
+    console.log('[Discovery] inject result:', JSON.stringify({
       decision: reading.decision,
       reason: reading.reason_code,
       zScore: reading.z_score,
       profileId,
       bpm,
-    });
+    }));
   }, []);
 
   const triggerSpike = useCallback(() => {
