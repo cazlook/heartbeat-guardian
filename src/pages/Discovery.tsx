@@ -208,6 +208,60 @@ const Discovery = () => {
     [user],
   );
 
+  // ── Sample handler — shared by poller and debug panel ──────────────
+  const handleSample = useCallback((sample: LiveHrSample) => {
+    const session = sessionRef.current;
+    const targetProfile = activeProfileRef.current;
+    if (!session || !targetProfile) return;
+
+    const reading = processReading(sample.bpm, session, {
+      app_in_foreground: true,
+      in_discovery_screen: true,
+      signal_quality: 0.9,
+      // accelerometer omitted → engine applies stricter no-accel rules
+    });
+
+    if (IS_DEV) {
+      setDebugLog((prev) => {
+        const next: DebugEvent = {
+          t: sample.sampleTime,
+          bpm: sample.bpm,
+          z: reading.z_score,
+          decision: reading.decision,
+          reason: reading.reason_code,
+        };
+        return [next, ...prev].slice(0, 10);
+      });
+    }
+
+    const win = reactionWindowRef.current;
+    if (reading.decision === 'ACCEPTED') {
+      if (!win || win.profileId !== targetProfile) {
+        reactionWindowRef.current = {
+          profileId: targetProfile,
+          startedAt: sample.sampleTime,
+          peakBpm: sample.bpm,
+          peakZ: reading.z_score ?? 0,
+        };
+      } else {
+        win.peakBpm = Math.max(win.peakBpm, sample.bpm);
+        win.peakZ = Math.max(win.peakZ, reading.z_score ?? 0);
+      }
+      setPulseProfileId(targetProfile);
+      window.setTimeout(() => {
+        setPulseProfileId((cur) => (cur === targetProfile ? null : cur));
+      }, 1200);
+
+      const w = reactionWindowRef.current!;
+      void persistReaction(targetProfile, reading, w.peakBpm, sample.sampleTime - w.startedAt);
+    } else if (win && win.profileId === targetProfile) {
+      reactionWindowRef.current = null;
+    }
+  }, [persistReaction]);
+
+  // Keep latest handler accessible to debug panel without re-subscribing poller
+  useEffect(() => { handleSampleRef.current = handleSample; }, [handleSample]);
+
   // ── Heart rate poller wired to engine ──────────────────────────────
   useEffect(() => {
     if (!user) return;
@@ -215,44 +269,7 @@ const Discovery = () => {
     pollerRef.current = poller;
 
     const off = poller.on((sample: LiveHrSample) => {
-      const session = sessionRef.current;
-      const targetProfile = activeProfileRef.current;
-      if (!session || !targetProfile) return;
-
-      const reading = processReading(sample.bpm, session, {
-        app_in_foreground: true,
-        in_discovery_screen: true,
-        signal_quality: 0.9,
-        // accelerometer omitted → engine applies stricter no-accel rules
-      });
-
-      const win = reactionWindowRef.current;
-      if (reading.decision === 'ACCEPTED') {
-        // Aggregate within the same sustained window for the same profile
-        if (!win || win.profileId !== targetProfile) {
-          reactionWindowRef.current = {
-            profileId: targetProfile,
-            startedAt: sample.sampleTime,
-            peakBpm: sample.bpm,
-            peakZ: reading.z_score ?? 0,
-          };
-        } else {
-          win.peakBpm = Math.max(win.peakBpm, sample.bpm);
-          win.peakZ = Math.max(win.peakZ, reading.z_score ?? 0);
-        }
-        // Heartbeat pulse feedback
-        setPulseProfileId(targetProfile);
-        window.setTimeout(() => {
-          setPulseProfileId((cur) => (cur === targetProfile ? null : cur));
-        }, 1200);
-
-        // Persist current peak (debounced inside)
-        const w = reactionWindowRef.current!;
-        void persistReaction(targetProfile, reading, w.peakBpm, sample.sampleTime - w.startedAt);
-      } else if (win && win.profileId === targetProfile) {
-        // Window closed — reset
-        reactionWindowRef.current = null;
-      }
+      handleSampleRef.current?.(sample);
     });
 
     poller.start();
