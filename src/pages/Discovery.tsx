@@ -14,10 +14,11 @@
  * `DEFAULT_CONFIG`.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Heart, Loader2, LogOut } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Heart, Loader2, LogOut, Bug } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -31,6 +32,8 @@ import {
 } from '@/engine';
 import { HeartRatePoller, type LiveHrSample } from '@/engine/heartRatePoller';
 import { Link, useNavigate } from 'react-router-dom';
+
+const IS_DEV = import.meta.env.DEV;
 
 interface ProfileCard {
   id: string;
