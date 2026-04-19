@@ -4,7 +4,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Heart } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const Login = () => {
@@ -27,75 +26,106 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-6 relative overflow-hidden">
-      {/* Ambient noir glow */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 left-1/4 h-[420px] w-[420px] rounded-full bg-primary/[0.07] blur-[120px]" />
-        <div className="absolute -bottom-40 right-1/4 h-[460px] w-[460px] rounded-full bg-primary/[0.05] blur-[120px]" />
-      </div>
+    <div
+      className="min-h-screen flex items-center justify-center p-6 text-foreground"
+      style={{ backgroundColor: '#0d0d0d' }}
+    >
+      <div className="w-full max-w-sm">
+        {/* Header */}
+        <div className="text-center space-y-4 mb-12">
+          <p
+            className="text-[10px] uppercase tracking-[0.4em]"
+            style={{ color: '#7a7570' }}
+          >
+            HeartSync
+          </p>
+          <h1
+            className="font-display text-5xl leading-[1.05]"
+            style={{ color: '#f0ece4' }}
+          >
+            Bentornato.
+          </h1>
+          <p
+            className="font-display italic text-base"
+            style={{ color: '#d4a574' }}
+          >
+            Il tuo cuore lo ha scelto prima di te.
+          </p>
+        </div>
 
-      <div className="relative w-full max-w-sm">
-        <div className="rounded-sm border border-border/60 bg-card/80 backdrop-blur-xl p-10 space-y-8">
-          {/* Header */}
-          <div className="text-center space-y-3">
-            <div className="inline-flex h-12 w-12 rounded-full bg-primary/[0.08] border border-primary/20 items-center justify-center mx-auto">
-              <Heart className="h-5 w-5 fill-current text-primary" />
-            </div>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-              HeartSync
-            </p>
-            <h1 className="font-display text-4xl text-foreground leading-[1.05]">
-              Bentornato.
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Il tuo cuore ti aspetta.
-            </p>
+        <form onSubmit={onSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label
+              htmlFor="email"
+              className="text-[10px] uppercase tracking-[0.25em]"
+              style={{ color: '#7a7570' }}
+            >
+              Email
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="h-12 rounded-none bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
+              style={{
+                color: '#f0ece4',
+                border: '1px solid #2a2a2a',
+              }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = '#d4a574')}
+              onBlur={(e) => (e.currentTarget.style.borderColor = '#2a2a2a')}
+            />
           </div>
 
-          <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-
-          <form onSubmit={onSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="rounded-sm bg-input/60 border-border focus-visible:ring-primary/40 h-11"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="rounded-sm bg-input/60 border-border focus-visible:ring-primary/40 h-11"
-              />
-            </div>
-            <Button
-              type="submit"
-              className="w-full h-12 rounded-sm bg-primary text-primary-foreground hover:bg-primary/90 font-medium tracking-wide uppercase text-xs"
-              disabled={submitting}
+          <div className="space-y-2">
+            <Label
+              htmlFor="password"
+              className="text-[10px] uppercase tracking-[0.25em]"
+              style={{ color: '#7a7570' }}
             >
-              {submitting ? 'Accesso…' : 'Accedi'}
-            </Button>
-          </form>
+              Password
+            </Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="h-12 rounded-none bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
+              style={{
+                color: '#f0ece4',
+                border: '1px solid #2a2a2a',
+              }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = '#d4a574')}
+              onBlur={(e) => (e.currentTarget.style.borderColor = '#2a2a2a')}
+            />
+          </div>
 
-          <p className="text-xs text-center text-muted-foreground">
+          <Button
+            type="submit"
+            disabled={submitting}
+            className="w-full h-12 rounded-none uppercase tracking-[0.25em] text-xs font-medium hover:brightness-110 transition-all"
+            style={{
+              backgroundColor: '#d4a574',
+              color: '#0d0d0d',
+            }}
+          >
+            {submitting ? 'Accesso…' : 'Accedi'}
+          </Button>
+        </form>
+
+        <div className="mt-10 text-center">
+          <p className="text-xs" style={{ color: '#7a7570' }}>
             Non hai un account?{' '}
-            <Link to="/register" className="text-primary hover:text-primary/80 underline underline-offset-4 decoration-primary/30">
+            <Link
+              to="/register"
+              className="underline-offset-4 hover:underline transition-colors"
+              style={{ color: '#d4a574' }}
+            >
               Registrati
             </Link>
           </p>
