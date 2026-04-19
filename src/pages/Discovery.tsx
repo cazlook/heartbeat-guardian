@@ -795,54 +795,102 @@ interface ProfileCardViewProps {
   profile: ProfileCard;
   isActive: boolean;
   isPulsing: boolean;
+  onOpenDetail: () => void;
 }
 
 const ProfileCardView = forwardRef<HTMLDivElement, ProfileCardViewProps>(({
   profile,
   isActive,
   isPulsing,
+  onOpenDetail,
 }, ref) => {
   const photo = profile.photos?.[0];
   return (
     <div ref={ref} data-profile-id={profile.id}>
       <Card
-        className={`relative overflow-hidden transition-shadow ${
-          isActive ? 'shadow-lg' : 'shadow-sm'
+        className={`group relative overflow-hidden cursor-pointer border-border/50 bg-gradient-surface shadow-soft transition-all duration-300 hover:border-border ${
+          isActive ? 'shadow-elegant ring-1 ring-primary/30 scale-[1.005]' : ''
         }`}
+        onClick={onOpenDetail}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onOpenDetail();
+          }
+        }}
       >
         <div className="aspect-[3/4] bg-muted relative">
           {photo ? (
-            <img src={photo} alt={profile.name ?? 'Profilo'} className="w-full h-full object-cover" />
+            <img
+              src={photo}
+              alt={profile.name ?? 'Profilo'}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+              loading="lazy"
+            />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-secondary">
               Nessuna foto
             </div>
           )}
-          {/* Heartbeat pulse — discreet feedback only */}
+
+          {/* Distance pill */}
+          {profile.distance_km != null && (
+            <div className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-background/60 backdrop-blur-md text-[11px] font-medium border border-border/40">
+              <MapPin className="h-3 w-3" />
+              <span>{profile.distance_km} km</span>
+            </div>
+          )}
+
+          {/* Heartbeat pulse */}
           <div
-            className={`absolute top-3 right-3 transition-opacity ${
+            className={`absolute top-3 right-3 transition-opacity duration-300 ${
               isPulsing ? 'opacity-100' : 'opacity-0'
             }`}
             aria-hidden
           >
-            <span className="relative flex h-10 w-10 items-center justify-center">
+            <span className="relative flex h-11 w-11 items-center justify-center">
               <span className="absolute inline-flex h-full w-full rounded-full bg-primary/40 animate-ping" />
-              <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/80 backdrop-blur">
-                <Heart className="h-5 w-5 text-primary-foreground fill-current" />
+              <span className="relative inline-flex h-11 w-11 items-center justify-center rounded-full bg-gradient-cardiac shadow-elegant">
+                <Heart className="h-5 w-5 text-primary-foreground fill-current heartbeat" />
               </span>
             </span>
           </div>
-          <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-background/95 via-background/70 to-transparent">
-            <h2 className="text-xl font-bold">
-              {profile.name ?? 'Senza nome'}
-              {profile.age != null && (
-                <span className="font-normal text-muted-foreground"> · {profile.age}</span>
+
+          {/* Bottom overlay with name + interests */}
+          <div className="absolute bottom-0 inset-x-0 p-5 pt-16 bg-gradient-overlay">
+            <div className="flex items-end justify-between gap-3">
+              <h2 className="text-2xl font-bold tracking-tight text-foreground">
+                {profile.name ?? 'Senza nome'}
+                {profile.age != null && (
+                  <span className="font-light text-foreground/70"> · {profile.age}</span>
+                )}
+              </h2>
+              {isActive && (
+                <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-primary font-semibold">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-glow" />
+                  Live
+                </span>
               )}
-            </h2>
+            </div>
+            {profile.interests && profile.interests.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {profile.interests.slice(0, 3).map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="rounded-full text-[10px] px-2 py-0.5 bg-background/50 backdrop-blur border border-border/40 font-medium"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         {profile.bio && (
-          <div className="p-4 text-sm text-muted-foreground whitespace-pre-wrap">
+          <div className="p-5 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
             {profile.bio}
           </div>
         )}
