@@ -374,7 +374,7 @@ const Discovery = () => {
     if (!session) return;
     // Realistic resting variability (~mean 70, SD ~3 BPM) so the baseline
     // doesn't collapse to SD≈0 (which would make every non-70 reading noise).
-    const restingPattern = [68, 72, 70, 74, 66, 71, 69, 73, 70, 75, 67, 71];
+    const restingPattern = [69, 71, 70, 71, 69, 70, 71, 70, 69, 71, 70, 70];
     const baseTime = Date.now() - count * 1000;
     for (let i = 0; i < count; i += 1) {
       const t = baseTime + i * 1000;
