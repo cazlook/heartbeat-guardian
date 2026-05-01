@@ -169,6 +169,19 @@ const Chat = () => {
           setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
         },
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `match_id=eq.${matchId}`,
+        },
+        (payload) => {
+          const m = payload.new as Message;
+          setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, read_at: m.read_at } : x)));
+        },
+      )
       .subscribe();
 
     return () => {
