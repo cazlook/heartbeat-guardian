@@ -347,9 +347,9 @@ const Chat = () => {
                   <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                     <div
                       className={[
-                        'max-w-[78%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap break-words leading-relaxed',
+                        'relative max-w-[78%] rounded-2xl px-4 py-2.5 pr-4 text-sm whitespace-pre-wrap break-words leading-relaxed',
                         mine
-                          ? 'bg-primary text-primary-foreground rounded-br-sm'
+                          ? 'bg-primary text-primary-foreground rounded-br-sm pb-5'
                           : 'bg-secondary text-foreground rounded-bl-sm',
                       ].join(' ')}
                       style={
@@ -359,6 +359,19 @@ const Chat = () => {
                       }
                     >
                       {m.content}
+                      {mine && (
+                        <span
+                          aria-label={m.read_at ? 'Letto' : 'Consegnato'}
+                          className="absolute bottom-1 right-2 font-mono-bpm"
+                          style={{
+                            fontSize: '10px',
+                            color: m.read_at ? '#d4a574' : '#7a7570',
+                            lineHeight: 1,
+                          }}
+                        >
+                          ✓✓
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
