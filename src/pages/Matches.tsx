@@ -280,16 +280,18 @@ const Matches = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={invitingId === m.id}
+                        disabled={invitingId === m.id || sentInvites.has(m.id)}
                         onClick={() => handleInvite(m)}
-                        className="flex-1 h-10 rounded-sm border-border/70 hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary uppercase tracking-wider text-[11px] font-medium text-foreground/85"
+                        className="flex-1 h-10 rounded-sm border-border/70 hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary uppercase tracking-wider text-[11px] font-medium text-foreground/85 disabled:opacity-100"
                       >
                         {invitingId === m.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : sentInvites.has(m.id) ? (
+                          <Check className="h-3.5 w-3.5 text-primary" strokeWidth={2} />
                         ) : (
                           <CalendarHeart className="h-3.5 w-3.5" strokeWidth={1.75} />
                         )}
-                        Invita a uscire
+                        {sentInvites.has(m.id) ? 'Invito inviato' : 'Invita a uscire'}
                       </Button>
                     </div>
                   </Card>
