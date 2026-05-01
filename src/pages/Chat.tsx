@@ -123,7 +123,7 @@ const Chat = () => {
         supabase.from('profiles').select('id, name, photos').eq('id', otherId).maybeSingle(),
         supabase
           .from('messages')
-          .select('id, match_id, sender_id, content, created_at')
+          .select('id, match_id, sender_id, content, created_at, read_at')
           .eq('match_id', matchId)
           .order('created_at', { ascending: true }),
       ]);
