@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, MessageSquare, CalendarHeart } from 'lucide-react';
+import { Loader2, MessageSquare, CalendarHeart, Check } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -49,6 +49,7 @@ const Matches = () => {
   const [loading, setLoading] = useState(true);
   const [matches, setMatches] = useState<MatchRow[]>([]);
   const [invitingId, setInvitingId] = useState<string | null>(null);
+  const [sentInvites, setSentInvites] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     markAllSeen();
@@ -105,6 +106,19 @@ const Matches = () => {
         setMatches(enriched);
         setLoading(false);
       }
+
+      const matchIds = enriched.map((m) => m.id);
+      if (matchIds.length > 0) {
+        const { data: existingInvites } = await supabase
+          .from('date_invites')
+          .select('match_id')
+          .eq('from_user_id', user.id)
+          .in('match_id', matchIds);
+
+        if (existingInvites && !cancelled) {
+          setSentInvites(new Set(existingInvites.map((i) => i.match_id)));
+        }
+      }
     })();
 
     return () => { cancelled = true; };
@@ -128,6 +142,7 @@ const Matches = () => {
       toast({ title: 'Errore invito', description: error.message, variant: 'destructive' });
       return;
     }
+    setSentInvites((prev) => new Set(prev).add(m.id));
     toast({
       title: 'Invito inviato',
       description: `${m.other?.name ?? 'questa persona'} riceverà la tua proposta.`,
@@ -265,16 +280,18 @@ const Matches = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={invitingId === m.id}
+                        disabled={invitingId === m.id || sentInvites.has(m.id)}
                         onClick={() => handleInvite(m)}
-                        className="flex-1 h-10 rounded-sm border-border/70 hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary uppercase tracking-wider text-[11px] font-medium text-foreground/85"
+                        className="flex-1 h-10 rounded-sm border-border/70 hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary uppercase tracking-wider text-[11px] font-medium text-foreground/85 disabled:opacity-100"
                       >
                         {invitingId === m.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : sentInvites.has(m.id) ? (
+                          <Check className="h-3.5 w-3.5 text-primary" strokeWidth={2} />
                         ) : (
                           <CalendarHeart className="h-3.5 w-3.5" strokeWidth={1.75} />
                         )}
-                        Invita a uscire
+                        {sentInvites.has(m.id) ? 'Invito inviato' : 'Invita a uscire'}
                       </Button>
                     </div>
                   </Card>
