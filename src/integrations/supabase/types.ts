@@ -64,6 +64,56 @@ export type Database = {
           },
         ]
       }
+      date_invites: {
+        Row: {
+          area: string | null
+          created_at: string
+          day: string
+          from_user_id: string
+          id: string
+          match_id: string
+          slot: string
+          status: string
+          to_user_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          area?: string | null
+          created_at?: string
+          day: string
+          from_user_id: string
+          id?: string
+          match_id: string
+          slot: string
+          status?: string
+          to_user_id: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          area?: string | null
+          created_at?: string
+          day?: string
+          from_user_id?: string
+          id?: string
+          match_id?: string
+          slot?: string
+          status?: string
+          to_user_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "date_invites_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           cardiac_score: number
