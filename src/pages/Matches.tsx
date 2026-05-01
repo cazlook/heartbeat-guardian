@@ -1,25 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2, MessageSquare, CalendarHeart } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from '@/components/ui/sheet';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -29,6 +12,8 @@ interface MatchRow {
   id: string;
   cardiac_score: number;
   created_at: string;
+  user_a: string;
+  user_b: string;
   other: {
     id: string;
     name: string | null;
@@ -36,22 +21,8 @@ interface MatchRow {
   } | null;
 }
 
-interface InviteState {
-  matchId: string;
-  name: string;
-  type: string;
-  day: string;
-  slot: string;
-  area: string;
-}
-
 const formatRelative = (iso: string): string => {
-  const then = new Date(iso).getTime();
-  const now = Date.now();
-  const diffMs = now - then;
   const dayMs = 24 * 60 * 60 * 1000;
-
-  // Compare calendar days
   const dayThen = new Date(iso); dayThen.setHours(0, 0, 0, 0);
   const dayNow = new Date(); dayNow.setHours(0, 0, 0, 0);
   const dayDiff = Math.round((dayNow.getTime() - dayThen.getTime()) / dayMs);
@@ -77,7 +48,7 @@ const Matches = () => {
   const { markAllSeen } = useMatchReveal();
   const [loading, setLoading] = useState(true);
   const [matches, setMatches] = useState<MatchRow[]>([]);
-  const [invite, setInvite] = useState<InviteState | null>(null);
+  const [invitingId, setInvitingId] = useState<string | null>(null);
 
   useEffect(() => {
     markAllSeen();
@@ -124,6 +95,8 @@ const Matches = () => {
           id: r.id,
           cardiac_score: Number(r.cardiac_score),
           created_at: r.created_at,
+          user_a: r.user_a,
+          user_b: r.user_b,
           other: profilesById[otherId] ?? { id: otherId, name: null, photos: [] },
         };
       });
@@ -137,24 +110,28 @@ const Matches = () => {
     return () => { cancelled = true; };
   }, [user]);
 
-  const openInvite = (m: MatchRow) => {
-    setInvite({
-      matchId: m.id,
-      name: m.other?.name ?? 'questa persona',
+  const handleInvite = async (m: MatchRow) => {
+    if (!user) return;
+    setInvitingId(m.id);
+    const toUserId = m.user_a === user.id ? m.user_b : m.user_a;
+    const { error } = await supabase.from('date_invites').insert({
+      match_id: m.id,
+      from_user_id: user.id,
+      to_user_id: toUserId,
       type: 'caffè',
       day: 'venerdì',
       slot: '19:00 – 21:00',
-      area: '',
+      area: null,
     });
-  };
-
-  const sendInvite = () => {
-    if (!invite) return;
+    setInvitingId(null);
+    if (error) {
+      toast({ title: 'Errore invito', description: error.message, variant: 'destructive' });
+      return;
+    }
     toast({
-      title: 'Invito pronto',
-      description: `${invite.type} · ${invite.day} · ${invite.slot}${invite.area ? ` · ${invite.area}` : ''}`,
+      title: 'Invito inviato',
+      description: `${m.other?.name ?? 'questa persona'} riceverà la tua proposta.`,
     });
-    setInvite(null);
   };
 
   return (
@@ -206,10 +183,29 @@ const Matches = () => {
               const scoreInt = Math.round(m.cardiac_score);
               const barPct = Math.max(0, Math.min(100, scoreInt));
               const when = formatRelative(m.created_at);
+              const isNew = (Date.now() - new Date(m.created_at).getTime()) < 86400000;
 
               return (
                 <li key={m.id}>
-                  <Card className="rounded-sm p-4 bg-card border border-border/60 hover:border-primary/40 transition-colors space-y-4">
+                  <Card className="relative rounded-sm p-4 bg-card border border-border/60 hover:border-primary/40 transition-colors space-y-4">
+                    {isNew && (
+                      <span
+                        className="absolute font-mono-bpm uppercase"
+                        style={{
+                          top: '12px',
+                          right: '12px',
+                          background: '#d4a574',
+                          color: '#0d0d0d',
+                          fontSize: '10px',
+                          letterSpacing: '0.08em',
+                          padding: '2px 6px',
+                          borderRadius: '2px',
+                        }}
+                      >
+                        NUOVO
+                      </span>
+                    )}
+
                     {/* Top row */}
                     <div className="flex items-start gap-4">
                       <div className="h-16 w-16 rounded-sm overflow-hidden bg-muted shrink-0">
@@ -227,7 +223,7 @@ const Matches = () => {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline justify-between gap-3">
+                        <div className="flex items-baseline justify-between gap-3 pr-16">
                           <div className="font-display text-2xl text-foreground truncate leading-tight">
                             {name}
                           </div>
@@ -269,10 +265,15 @@ const Matches = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => openInvite(m)}
+                        disabled={invitingId === m.id}
+                        onClick={() => handleInvite(m)}
                         className="flex-1 h-10 rounded-sm border-border/70 hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary uppercase tracking-wider text-[11px] font-medium text-foreground/85"
                       >
-                        <CalendarHeart className="h-3.5 w-3.5" strokeWidth={1.75} />
+                        {invitingId === m.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <CalendarHeart className="h-3.5 w-3.5" strokeWidth={1.75} />
+                        )}
                         Invita a uscire
                       </Button>
                     </div>
@@ -283,101 +284,6 @@ const Matches = () => {
           </ul>
         )}
       </div>
-
-      {/* Invite sheet — inline, mantiene tema noir */}
-      <Sheet open={!!invite} onOpenChange={(o) => !o && setInvite(null)}>
-        <SheetContent side="bottom" className="bg-card border-border/60 rounded-t-sm">
-          <SheetHeader className="text-left">
-            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-              Invito · HeartSync
-            </p>
-            <SheetTitle className="font-display text-3xl text-foreground leading-tight">
-              Invita {invite?.name}
-            </SheetTitle>
-            <SheetDescription className="text-muted-foreground italic">
-              Scegli quando e dove. Il vostro cuore farà il resto.
-            </SheetDescription>
-          </SheetHeader>
-
-          {invite && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-              <div className="space-y-2">
-                <Label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Tipo</Label>
-                <Select value={invite.type} onValueChange={(v) => setInvite({ ...invite, type: v })}>
-                  <SelectTrigger className="rounded-sm bg-input/60 border-border h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="caffè">Caffè</SelectItem>
-                    <SelectItem value="aperitivo">Aperitivo</SelectItem>
-                    <SelectItem value="cena">Cena</SelectItem>
-                    <SelectItem value="passeggiata">Passeggiata</SelectItem>
-                    <SelectItem value="cinema">Cinema</SelectItem>
-                    <SelectItem value="concerto">Concerto</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Giorno</Label>
-                <Select value={invite.day} onValueChange={(v) => setInvite({ ...invite, day: v })}>
-                  <SelectTrigger className="rounded-sm bg-input/60 border-border h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="oggi">Oggi</SelectItem>
-                    <SelectItem value="domani">Domani</SelectItem>
-                    <SelectItem value="venerdì">Venerdì</SelectItem>
-                    <SelectItem value="sabato">Sabato</SelectItem>
-                    <SelectItem value="domenica">Domenica</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Fascia oraria</Label>
-                <Select value={invite.slot} onValueChange={(v) => setInvite({ ...invite, slot: v })}>
-                  <SelectTrigger className="rounded-sm bg-input/60 border-border h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="11:00 – 13:00">11:00 – 13:00</SelectItem>
-                    <SelectItem value="17:00 – 19:00">17:00 – 19:00</SelectItem>
-                    <SelectItem value="19:00 – 21:00">19:00 – 21:00</SelectItem>
-                    <SelectItem value="21:00 – 23:00">21:00 – 23:00</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Zona</Label>
-                <Input
-                  value={invite.area}
-                  onChange={(e) => setInvite({ ...invite, area: e.target.value })}
-                  placeholder="Es. Trastevere, Navigli…"
-                  className="rounded-sm bg-input/60 border-border focus-visible:ring-primary/40 h-11"
-                />
-              </div>
-            </div>
-          )}
-
-          <SheetFooter className="mt-6 flex-row gap-2">
-            <Button
-              variant="ghost"
-              onClick={() => setInvite(null)}
-              className="flex-1 rounded-sm uppercase tracking-wider text-xs text-muted-foreground hover:text-foreground"
-            >
-              Annulla
-            </Button>
-            <Button
-              onClick={sendInvite}
-              className="flex-1 rounded-sm bg-primary text-primary-foreground hover:bg-primary/90 uppercase tracking-wider text-xs"
-            >
-              Invia invito
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 };
