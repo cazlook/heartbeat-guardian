@@ -194,6 +194,29 @@ const Chat = () => {
     listEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
+  // ── Mark unread incoming messages as read ─────────────────────────
+  useEffect(() => {
+    if (!user || !matchId) return;
+    const unreadIds = messages
+      .filter((m) => m.sender_id !== user.id && !m.read_at)
+      .map((m) => m.id);
+    if (unreadIds.length === 0) return;
+
+    (async () => {
+      const nowIso = new Date().toISOString();
+      const { error } = await supabase
+        .from('messages')
+        .update({ read_at: nowIso })
+        .in('id', unreadIds)
+        .is('read_at', null);
+      if (!error) {
+        setMessages((prev) =>
+          prev.map((x) => (unreadIds.includes(x.id) ? { ...x, read_at: nowIso } : x)),
+        );
+      }
+    })();
+  }, [messages, user, matchId]);
+
   // ── Send ──────────────────────────────────────────────────────────
   const handleSend = useCallback(
     async (e: FormEvent) => {
