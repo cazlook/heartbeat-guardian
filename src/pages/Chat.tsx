@@ -33,6 +33,7 @@ interface Message {
   sender_id: string;
   content: string;
   created_at: string;
+  read_at: string | null;
 }
 
 interface OtherProfile {
@@ -122,7 +123,7 @@ const Chat = () => {
         supabase.from('profiles').select('id, name, photos').eq('id', otherId).maybeSingle(),
         supabase
           .from('messages')
-          .select('id, match_id, sender_id, content, created_at')
+          .select('id, match_id, sender_id, content, created_at, read_at')
           .eq('match_id', matchId)
           .order('created_at', { ascending: true }),
       ]);
@@ -168,6 +169,19 @@ const Chat = () => {
           setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
         },
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `match_id=eq.${matchId}`,
+        },
+        (payload) => {
+          const m = payload.new as Message;
+          setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, read_at: m.read_at } : x)));
+        },
+      )
       .subscribe();
 
     return () => {
@@ -179,6 +193,29 @@ const Chat = () => {
   useEffect(() => {
     listEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
+
+  // ── Mark unread incoming messages as read ─────────────────────────
+  useEffect(() => {
+    if (!user || !matchId) return;
+    const unreadIds = messages
+      .filter((m) => m.sender_id !== user.id && !m.read_at)
+      .map((m) => m.id);
+    if (unreadIds.length === 0) return;
+
+    (async () => {
+      const nowIso = new Date().toISOString();
+      const { error } = await supabase
+        .from('messages')
+        .update({ read_at: nowIso })
+        .in('id', unreadIds)
+        .is('read_at', null);
+      if (!error) {
+        setMessages((prev) =>
+          prev.map((x) => (unreadIds.includes(x.id) ? { ...x, read_at: nowIso } : x)),
+        );
+      }
+    })();
+  }, [messages, user, matchId]);
 
   // ── Send ──────────────────────────────────────────────────────────
   const handleSend = useCallback(
@@ -310,9 +347,9 @@ const Chat = () => {
                   <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                     <div
                       className={[
-                        'max-w-[78%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap break-words leading-relaxed',
+                        'relative max-w-[78%] rounded-2xl px-4 py-2.5 pr-4 text-sm whitespace-pre-wrap break-words leading-relaxed',
                         mine
-                          ? 'bg-primary text-primary-foreground rounded-br-sm'
+                          ? 'bg-primary text-primary-foreground rounded-br-sm pb-5'
                           : 'bg-secondary text-foreground rounded-bl-sm',
                       ].join(' ')}
                       style={
@@ -322,6 +359,19 @@ const Chat = () => {
                       }
                     >
                       {m.content}
+                      {mine && (
+                        <span
+                          aria-label={m.read_at ? 'Letto' : 'Consegnato'}
+                          className="absolute bottom-1 right-2 font-mono-bpm"
+                          style={{
+                            fontSize: '10px',
+                            color: m.read_at ? '#d4a574' : '#7a7570',
+                            lineHeight: 1,
+                          }}
+                        >
+                          ✓✓
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
