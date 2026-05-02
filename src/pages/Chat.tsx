@@ -445,7 +445,7 @@ const Chat = () => {
       {/* Messages */}
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-md mx-auto px-3 py-5 space-y-4">
-          {messages.length === 0 ? (
+          {timeline.length === 0 ? (
             <div className="py-16 text-center">
               <p className="font-display text-lg text-foreground/80">
                 Nessun messaggio.
@@ -455,9 +455,59 @@ const Chat = () => {
               </p>
             </div>
           ) : (
-            messages.map((m, i) => {
+            timeline.map((item, i) => {
+              if (item.kind === 'invite') {
+                const inv = item.data;
+                const tipo = inviteTypeLabel(inv);
+                const luogo = invitePlace(inv);
+                const quando = formatInviteWhen(inv);
+                const detailParts = [tipo, luogo, quando].filter(Boolean);
+                const detail = detailParts.join(' · ');
+                const sender = inv.from_user_id === user?.id ? 'Tu' : (other?.name ?? 'Match');
+
+                if (inv.status === 'pending') {
+                  return (
+                    <div
+                      key={`inv-${inv.id}`}
+                      className="text-center italic"
+                      style={{ color: '#7a7570', fontSize: '12px' }}
+                    >
+                      💌 {sender} ha proposto: {detail}
+                    </div>
+                  );
+                }
+                if (inv.status === 'accepted') {
+                  return (
+                    <div
+                      key={`inv-${inv.id}`}
+                      className="text-center"
+                      style={{ color: '#d4a574', fontSize: '12px' }}
+                    >
+                      ✓ Appuntamento confermato — {detail}
+                    </div>
+                  );
+                }
+                if (inv.status === 'declined') {
+                  return (
+                    <div
+                      key={`inv-${inv.id}`}
+                      className="text-center"
+                      style={{ color: '#7a7570', fontSize: '12px' }}
+                    >
+                      ✕ Invito rifiutato
+                    </div>
+                  );
+                }
+                return null;
+              }
+
+              const m = item.data;
               const mine = m.sender_id === user?.id;
-              const prev = messages[i - 1];
+              // previous message-of-same-kind for time-grouping
+              let prev: Message | undefined;
+              for (let j = i - 1; j >= 0; j--) {
+                if (timeline[j].kind === 'msg') { prev = timeline[j].data as Message; break; }
+              }
               const showTime =
                 !prev ||
                 new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() > 5 * 60 * 1000 ||
