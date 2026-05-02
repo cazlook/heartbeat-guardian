@@ -123,6 +123,7 @@ const Chat = () => {
   const [loading, setLoading] = useState(true);
   const [other, setOther] = useState<OtherProfile | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [invites, setInvites] = useState<InviteEvent[]>([]);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
 
