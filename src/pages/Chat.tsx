@@ -327,7 +327,7 @@ const Chat = () => {
               {headerName}
             </h1>
             <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              Online
+              {otherTyping ? 'sta scrivendo…' : 'Online'}
             </p>
           </div>
         </div>
