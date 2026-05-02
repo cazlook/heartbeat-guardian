@@ -110,6 +110,10 @@ const Matches = () => {
   const [inviteDate, setInviteDate] = useState('');
   const [inviteTime, setInviteTime] = useState('');
   const [inviteNote, setInviteNote] = useState('');
+  const [receivedInvites, setReceivedInvites] = useState<ReceivedInvite[]>([]);
+  const [loadingInvites, setLoadingInvites] = useState(true);
+  const [respondingId, setRespondingId] = useState<string | null>(null);
+  const [fadingId, setFadingId] = useState<string | null>(null);
 
   useEffect(() => {
     markAllSeen();
