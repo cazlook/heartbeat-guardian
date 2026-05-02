@@ -600,7 +600,7 @@ const Chat = () => {
                   event: 'typing',
                   payload: { from: user?.id },
                 });
-                console.log('[typing-out] broadcast inviato');
+                
               }
             }}
             placeholder="Scrivi un messaggio…"
