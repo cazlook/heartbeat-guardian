@@ -64,6 +64,12 @@ const Matches = () => {
   const [matches, setMatches] = useState<MatchRow[]>([]);
   const [invitingId, setInvitingId] = useState<string | null>(null);
   const [sentInvites, setSentInvites] = useState<Set<string>>(new Set());
+  const [inviteDialogMatch, setInviteDialogMatch] = useState<MatchRow | null>(null);
+  const [inviteType, setInviteType] = useState<InviteType | null>(null);
+  const [inviteLocation, setInviteLocation] = useState('');
+  const [inviteDate, setInviteDate] = useState('');
+  const [inviteTime, setInviteTime] = useState('');
+  const [inviteNote, setInviteNote] = useState('');
 
   useEffect(() => {
     markAllSeen();
