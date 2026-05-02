@@ -167,11 +167,16 @@ const Chat = () => {
 
       const otherId = match.user_a === user.id ? match.user_b : match.user_a;
 
-      const [profRes, msgRes] = await Promise.all([
+      const [profRes, msgRes, invRes] = await Promise.all([
         supabase.from('profiles').select('id, name, photos').eq('id', otherId).maybeSingle(),
         supabase
           .from('messages')
           .select('id, match_id, sender_id, content, created_at, read_at')
+          .eq('match_id', matchId)
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('date_invites')
+          .select('id, match_id, from_user_id, invite_type, type, location, area, scheduled_at, day, slot, status, created_at')
           .eq('match_id', matchId)
           .order('created_at', { ascending: true }),
       ]);
@@ -188,6 +193,10 @@ const Chat = () => {
         toast({ title: 'Errore messaggi', description: msgRes.error.message, variant: 'destructive' });
       } else {
         setMessages((msgRes.data ?? []) as Message[]);
+      }
+
+      if (!invRes.error) {
+        setInvites((invRes.data ?? []) as InviteEvent[]);
       }
 
       setLoading(false);
