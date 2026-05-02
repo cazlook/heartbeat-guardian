@@ -68,40 +68,55 @@ export type Database = {
         Row: {
           area: string | null
           created_at: string
-          day: string
+          day: string | null
+          event_id: string | null
           from_user_id: string
           id: string
+          invite_type: string | null
+          location: string | null
           match_id: string
-          slot: string
+          note: string | null
+          scheduled_at: string | null
+          slot: string | null
           status: string
           to_user_id: string
-          type: string
+          type: string | null
           updated_at: string
         }
         Insert: {
           area?: string | null
           created_at?: string
-          day: string
+          day?: string | null
+          event_id?: string | null
           from_user_id: string
           id?: string
+          invite_type?: string | null
+          location?: string | null
           match_id: string
-          slot: string
+          note?: string | null
+          scheduled_at?: string | null
+          slot?: string | null
           status?: string
           to_user_id: string
-          type: string
+          type?: string | null
           updated_at?: string
         }
         Update: {
           area?: string | null
           created_at?: string
-          day?: string
+          day?: string | null
+          event_id?: string | null
           from_user_id?: string
           id?: string
+          invite_type?: string | null
+          location?: string | null
           match_id?: string
-          slot?: string
+          note?: string | null
+          scheduled_at?: string | null
+          slot?: string | null
           status?: string
           to_user_id?: string
-          type?: string
+          type?: string | null
           updated_at?: string
         }
         Relationships: [
