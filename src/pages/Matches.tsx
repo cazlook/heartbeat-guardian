@@ -335,6 +335,38 @@ const Matches = () => {
           </Button>
         </div>
 
+        <Tabs defaultValue="matches" className="w-full">
+          <TabsList className="bg-transparent p-0 h-auto w-full justify-start gap-6 border-b border-border/40 rounded-none">
+            <TabsTrigger
+              value="matches"
+              className="bg-transparent rounded-none px-0 pb-3 pt-0 uppercase tracking-[0.1em] text-sm border-b-2 border-transparent text-[#7a7570] data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-[#f0ece4] data-[state=active]:border-[#d4a574]"
+            >
+              Match
+            </TabsTrigger>
+            <TabsTrigger
+              value="invites"
+              className="bg-transparent rounded-none px-0 pb-3 pt-0 uppercase tracking-[0.1em] text-sm border-b-2 border-transparent text-[#7a7570] data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-[#f0ece4] data-[state=active]:border-[#d4a574] inline-flex items-center gap-2"
+            >
+              Inviti
+              {receivedInvites.length > 0 && (
+                <span
+                  className="font-mono-bpm"
+                  style={{
+                    background: '#d4a574',
+                    color: '#0d0d0d',
+                    fontSize: '10px',
+                    letterSpacing: '0.08em',
+                    padding: '1px 6px',
+                    borderRadius: '2px',
+                  }}
+                >
+                  {receivedInvites.length}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="matches" className="mt-6">
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
