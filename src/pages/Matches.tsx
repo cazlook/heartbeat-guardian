@@ -1,12 +1,26 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, MessageSquare, CalendarHeart, Check } from 'lucide-react';
+import { Loader2, MessageSquare, CalendarHeart, Check, Coffee, Wine, UtensilsCrossed, Footprints, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useMatchReveal } from '@/components/MatchRevealProvider';
+
+type InviteType = 'caffe' | 'aperitivo' | 'cena' | 'passeggiata' | 'altro';
+
+const INVITE_TYPES: { value: InviteType; label: string; Icon: typeof Coffee }[] = [
+  { value: 'caffe', label: 'Caffè', Icon: Coffee },
+  { value: 'aperitivo', label: 'Aperitivo', Icon: Wine },
+  { value: 'cena', label: 'Cena', Icon: UtensilsCrossed },
+  { value: 'passeggiata', label: 'Passeggiata', Icon: Footprints },
+  { value: 'altro', label: 'Altro', Icon: Sparkles },
+];
 
 interface MatchRow {
   id: string;
