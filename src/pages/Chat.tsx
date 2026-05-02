@@ -196,7 +196,9 @@ const Chat = () => {
       }
 
       if (!invRes.error) {
-        setInvites((invRes.data ?? []) as InviteEvent[]);
+        const data = (invRes.data ?? []) as InviteEvent[];
+        const unique = data.filter((v, i, a) => a.findIndex((x) => x.id === v.id) === i);
+        setInvites(unique);
       }
 
       setLoading(false);
@@ -463,16 +465,21 @@ const Chat = () => {
                 const quando = formatInviteWhen(inv);
                 const detailParts = [tipo, luogo, quando].filter(Boolean);
                 const detail = detailParts.join(' · ');
-                const sender = inv.from_user_id === user?.id ? 'Tu' : (other?.name ?? 'Match');
+                const isMine = inv.from_user_id === user?.id;
+                const sender = isMine ? '' : (other?.name ?? 'Match');
 
                 if (inv.status === 'pending') {
                   return (
                     <div
                       key={`inv-${inv.id}`}
-                      className="text-center italic"
+                      className="text-center italic flex items-center justify-center gap-1.5"
                       style={{ color: '#7a7570', fontSize: '12px' }}
                     >
-                      💌 {sender} ha proposto: {detail}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d4a574" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="2" />
+                        <path d="M2 7l10 7 10-7" />
+                      </svg>
+                      <span>{isMine ? `Hai proposto: ${detail}` : `${sender} ha proposto: ${detail}`}</span>
                     </div>
                   );
                 }
