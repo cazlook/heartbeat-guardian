@@ -194,6 +194,31 @@ const Chat = () => {
     };
   }, [matchId]);
 
+  // ── Typing broadcast channel ──────────────────────────────────────
+  useEffect(() => {
+    if (!matchId || !user) return;
+
+    const channel = supabase
+      .channel(`typing-${matchId}`, { config: { broadcast: { self: false } } })
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        console.log('[typing-in]', payload);
+        const fromId = (payload.payload as { from?: string } | undefined)?.from;
+        if (!fromId || fromId === user.id) return;
+        setOtherTyping(true);
+        if (otherTypingTimeoutRef.current) clearTimeout(otherTypingTimeoutRef.current);
+        otherTypingTimeoutRef.current = setTimeout(() => setOtherTyping(false), 3000);
+      })
+      .subscribe();
+
+    typingChannelRef.current = channel;
+
+    return () => {
+      if (otherTypingTimeoutRef.current) clearTimeout(otherTypingTimeoutRef.current);
+      supabase.removeChannel(channel);
+      typingChannelRef.current = null;
+    };
+  }, [matchId, user]);
+
   // ── Auto-scroll on new messages ───────────────────────────────────
   useEffect(() => {
     listEndRef.current?.scrollIntoView({ behavior: 'smooth' });
