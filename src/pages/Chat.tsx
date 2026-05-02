@@ -434,7 +434,19 @@ const Chat = () => {
         <div className="max-w-md mx-auto px-3 py-3 flex items-center gap-2">
           <Input
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              const now = Date.now();
+              if (typingChannelRef.current && now - lastTypingSentRef.current > 1500) {
+                lastTypingSentRef.current = now;
+                typingChannelRef.current.send({
+                  type: 'broadcast',
+                  event: 'typing',
+                  payload: { from: user?.id },
+                });
+                console.log('[typing-out] broadcast inviato');
+              }
+            }}
             placeholder="Scrivi un messaggio…"
             maxLength={2000}
             autoComplete="off"
