@@ -15,6 +15,13 @@ import Matches from "./pages/Matches.tsx";
 import Chat from "./pages/Chat.tsx";
 import ProfileSetup from "./pages/ProfileSetup.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import { InAppBanner } from "@/components/InAppBanner";
+import { useInAppNotifications } from "@/hooks/useInAppNotifications";
+
+const GlobalNotifications = () => {
+  const { banner, dismissBanner } = useInAppNotifications();
+  return <InAppBanner banner={banner} onDismiss={dismissBanner} />;
+};
 
 const queryClient = new QueryClient();
 
