@@ -36,6 +36,25 @@ interface Message {
   read_at: string | null;
 }
 
+interface InviteEvent {
+  id: string;
+  match_id: string;
+  from_user_id: string;
+  invite_type: string | null;
+  type: string | null;
+  location: string | null;
+  area: string | null;
+  scheduled_at: string | null;
+  day: string | null;
+  slot: string | null;
+  status: string;
+  created_at: string;
+}
+
+type TimelineItem =
+  | { kind: 'msg'; data: Message }
+  | { kind: 'invite'; data: InviteEvent };
+
 interface OtherProfile {
   id: string;
   name: string | null;
@@ -45,6 +64,29 @@ interface OtherProfile {
 const DATE_TYPES = ['Caffè', 'Aperitivo', 'Cena', 'Passeggiata'] as const;
 const DAYS = ['Stasera', 'Domani', 'Weekend'] as const;
 const SLOTS = ['Pomeriggio', 'Sera', 'Notte'] as const;
+
+const formatInviteWhen = (inv: InviteEvent): string => {
+  if (inv.scheduled_at) {
+    const d = new Date(inv.scheduled_at);
+    const datePart = new Intl.DateTimeFormat('it-IT', {
+      weekday: 'long', day: 'numeric', month: 'long',
+    }).format(d);
+    const timePart = new Intl.DateTimeFormat('it-IT', {
+      hour: '2-digit', minute: '2-digit',
+    }).format(d);
+    const cap = datePart.charAt(0).toUpperCase() + datePart.slice(1);
+    return `${cap} · ${timePart}`;
+  }
+  return [inv.day, inv.slot].filter(Boolean).join(' · ');
+};
+
+const inviteTypeLabel = (inv: InviteEvent): string => {
+  const raw = (inv.invite_type ?? inv.type ?? '').trim();
+  if (!raw) return 'Incontro';
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+};
+
+const invitePlace = (inv: InviteEvent): string => inv.location ?? inv.area ?? '';
 
 const formatTimestamp = (iso: string): string => {
   const d = new Date(iso);
