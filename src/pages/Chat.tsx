@@ -84,6 +84,11 @@ const Chat = () => {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
 
+  const [otherTyping, setOtherTyping] = useState(false);
+  const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const lastTypingSentRef = useRef<number>(0);
+  const otherTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteType, setInviteType] = useState<(typeof DATE_TYPES)[number]>('Caffè');
   const [inviteDay, setInviteDay] = useState<(typeof DAYS)[number]>('Stasera');
@@ -188,6 +193,31 @@ const Chat = () => {
       supabase.removeChannel(channel);
     };
   }, [matchId]);
+
+  // ── Typing broadcast channel ──────────────────────────────────────
+  useEffect(() => {
+    if (!matchId || !user) return;
+
+    const channel = supabase
+      .channel(`typing-${matchId}`, { config: { broadcast: { self: false } } })
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        console.log('[typing-in]', payload);
+        const fromId = (payload.payload as { from?: string } | undefined)?.from;
+        if (!fromId || fromId === user.id) return;
+        setOtherTyping(true);
+        if (otherTypingTimeoutRef.current) clearTimeout(otherTypingTimeoutRef.current);
+        otherTypingTimeoutRef.current = setTimeout(() => setOtherTyping(false), 3000);
+      })
+      .subscribe();
+
+    typingChannelRef.current = channel;
+
+    return () => {
+      if (otherTypingTimeoutRef.current) clearTimeout(otherTypingTimeoutRef.current);
+      supabase.removeChannel(channel);
+      typingChannelRef.current = null;
+    };
+  }, [matchId, user]);
 
   // ── Auto-scroll on new messages ───────────────────────────────────
   useEffect(() => {
@@ -297,7 +327,7 @@ const Chat = () => {
               {headerName}
             </h1>
             <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              Online
+              {otherTyping ? 'sta scrivendo…' : 'Online'}
             </p>
           </div>
         </div>
@@ -404,7 +434,19 @@ const Chat = () => {
         <div className="max-w-md mx-auto px-3 py-3 flex items-center gap-2">
           <Input
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              const now = Date.now();
+              if (typingChannelRef.current && now - lastTypingSentRef.current > 1500) {
+                lastTypingSentRef.current = now;
+                typingChannelRef.current.send({
+                  type: 'broadcast',
+                  event: 'typing',
+                  payload: { from: user?.id },
+                });
+                console.log('[typing-out] broadcast inviato');
+              }
+            }}
             placeholder="Scrivi un messaggio…"
             maxLength={2000}
             autoComplete="off"
