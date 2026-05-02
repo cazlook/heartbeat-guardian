@@ -313,7 +313,7 @@ const Chat = () => {
   // ── Auto-scroll on new messages ───────────────────────────────────
   useEffect(() => {
     listEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length]);
+  }, [messages.length, invites.length]);
 
   // ── Mark unread incoming messages as read ─────────────────────────
   useEffect(() => {
