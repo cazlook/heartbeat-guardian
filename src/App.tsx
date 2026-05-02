@@ -33,6 +33,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <MatchRevealProvider>
+            <GlobalNotifications />
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
