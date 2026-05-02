@@ -84,6 +84,11 @@ const Chat = () => {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
 
+  const [otherTyping, setOtherTyping] = useState(false);
+  const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const lastTypingSentRef = useRef<number>(0);
+  const otherTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteType, setInviteType] = useState<(typeof DATE_TYPES)[number]>('Caffè');
   const [inviteDay, setInviteDay] = useState<(typeof DAYS)[number]>('Stasera');
