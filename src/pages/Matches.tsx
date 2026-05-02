@@ -188,6 +188,93 @@ const Matches = () => {
     return () => { cancelled = true; };
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+
+    (async () => {
+      setLoadingInvites(true);
+      const { data: invs, error } = await supabase
+        .from('date_invites')
+        .select('id, from_user_id, invite_type, type, location, scheduled_at, day, slot, area, note, status')
+        .eq('to_user_id', user.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (cancelled) return;
+      if (error) {
+        toast({ title: 'Errore caricamento inviti', description: error.message, variant: 'destructive' });
+        setLoadingInvites(false);
+        return;
+      }
+
+      const senderIds = Array.from(new Set((invs ?? []).map((i) => i.from_user_id)));
+      let sendersById: Record<string, { id: string; name: string | null; photos: string[] }> = {};
+      if (senderIds.length > 0) {
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, name, photos')
+          .in('id', senderIds);
+        sendersById = Object.fromEntries((profs ?? []).map((p) => [p.id, p]));
+      }
+
+      const enriched: ReceivedInvite[] = (invs ?? []).map((i) => ({
+        id: i.id,
+        from_user_id: i.from_user_id,
+        invite_type: i.invite_type,
+        type: i.type,
+        location: i.location,
+        scheduled_at: i.scheduled_at,
+        day: i.day,
+        slot: i.slot,
+        area: i.area,
+        note: i.note,
+        status: i.status,
+        sender: sendersById[i.from_user_id] ?? null,
+      }));
+
+      if (!cancelled) {
+        setReceivedInvites(enriched);
+        setLoadingInvites(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [user]);
+
+  const handleAcceptInvite = async (inviteId: string) => {
+    setRespondingId(inviteId);
+    const { error } = await supabase
+      .from('date_invites')
+      .update({ status: 'accepted' })
+      .eq('id', inviteId);
+    setRespondingId(null);
+    if (error) {
+      toast({ title: "Errore nell'aggiornamento dell'invito", description: error.message, variant: 'destructive' });
+      return;
+    }
+    setReceivedInvites((prev) => prev.map((i) => (i.id === inviteId ? { ...i, status: 'accepted' } : i)));
+    toast({ title: 'Invito accettato' });
+  };
+
+  const handleDeclineInvite = async (inviteId: string) => {
+    setRespondingId(inviteId);
+    const { error } = await supabase
+      .from('date_invites')
+      .update({ status: 'declined' })
+      .eq('id', inviteId);
+    setRespondingId(null);
+    if (error) {
+      toast({ title: "Errore nell'aggiornamento dell'invito", description: error.message, variant: 'destructive' });
+      return;
+    }
+    setFadingId(inviteId);
+    setTimeout(() => {
+      setReceivedInvites((prev) => prev.filter((i) => i.id !== inviteId));
+      setFadingId((curr) => (curr === inviteId ? null : curr));
+    }, 300);
+  };
+
   const handleInvite = async (m: MatchRow) => {
     if (!user) return;
     setInviteDialogMatch(m);
