@@ -196,7 +196,9 @@ const Chat = () => {
       }
 
       if (!invRes.error) {
-        setInvites((invRes.data ?? []) as InviteEvent[]);
+        const data = (invRes.data ?? []) as InviteEvent[];
+        const unique = data.filter((v, i, a) => a.findIndex((x) => x.id === v.id) === i);
+        setInvites(unique);
       }
 
       setLoading(false);
