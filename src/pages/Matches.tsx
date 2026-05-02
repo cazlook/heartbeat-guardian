@@ -74,6 +74,8 @@ const formatItalianDateTime = (inv: ReceivedInvite): string => {
   const parts = [inv.day, inv.slot].filter(Boolean);
   return parts.join(' · ');
 };
+
+const formatRelative = (iso: string): string => {
   const dayMs = 24 * 60 * 60 * 1000;
   const dayThen = new Date(iso); dayThen.setHours(0, 0, 0, 0);
   const dayNow = new Date(); dayNow.setHours(0, 0, 0, 0);
