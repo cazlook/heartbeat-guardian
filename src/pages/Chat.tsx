@@ -36,6 +36,25 @@ interface Message {
   read_at: string | null;
 }
 
+interface InviteEvent {
+  id: string;
+  match_id: string;
+  from_user_id: string;
+  invite_type: string | null;
+  type: string | null;
+  location: string | null;
+  area: string | null;
+  scheduled_at: string | null;
+  day: string | null;
+  slot: string | null;
+  status: string;
+  created_at: string;
+}
+
+type TimelineItem =
+  | { kind: 'msg'; data: Message }
+  | { kind: 'invite'; data: InviteEvent };
+
 interface OtherProfile {
   id: string;
   name: string | null;
@@ -45,6 +64,29 @@ interface OtherProfile {
 const DATE_TYPES = ['Caffè', 'Aperitivo', 'Cena', 'Passeggiata'] as const;
 const DAYS = ['Stasera', 'Domani', 'Weekend'] as const;
 const SLOTS = ['Pomeriggio', 'Sera', 'Notte'] as const;
+
+const formatInviteWhen = (inv: InviteEvent): string => {
+  if (inv.scheduled_at) {
+    const d = new Date(inv.scheduled_at);
+    const datePart = new Intl.DateTimeFormat('it-IT', {
+      weekday: 'long', day: 'numeric', month: 'long',
+    }).format(d);
+    const timePart = new Intl.DateTimeFormat('it-IT', {
+      hour: '2-digit', minute: '2-digit',
+    }).format(d);
+    const cap = datePart.charAt(0).toUpperCase() + datePart.slice(1);
+    return `${cap} · ${timePart}`;
+  }
+  return [inv.day, inv.slot].filter(Boolean).join(' · ');
+};
+
+const inviteTypeLabel = (inv: InviteEvent): string => {
+  const raw = (inv.invite_type ?? inv.type ?? '').trim();
+  if (!raw) return 'Incontro';
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+};
+
+const invitePlace = (inv: InviteEvent): string => inv.location ?? inv.area ?? '';
 
 const formatTimestamp = (iso: string): string => {
   const d = new Date(iso);
@@ -81,6 +123,7 @@ const Chat = () => {
   const [loading, setLoading] = useState(true);
   const [other, setOther] = useState<OtherProfile | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [invites, setInvites] = useState<InviteEvent[]>([]);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
 
@@ -124,11 +167,16 @@ const Chat = () => {
 
       const otherId = match.user_a === user.id ? match.user_b : match.user_a;
 
-      const [profRes, msgRes] = await Promise.all([
+      const [profRes, msgRes, invRes] = await Promise.all([
         supabase.from('profiles').select('id, name, photos').eq('id', otherId).maybeSingle(),
         supabase
           .from('messages')
           .select('id, match_id, sender_id, content, created_at, read_at')
+          .eq('match_id', matchId)
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('date_invites')
+          .select('id, match_id, from_user_id, invite_type, type, location, area, scheduled_at, day, slot, status, created_at')
           .eq('match_id', matchId)
           .order('created_at', { ascending: true }),
       ]);
@@ -145,6 +193,10 @@ const Chat = () => {
         toast({ title: 'Errore messaggi', description: msgRes.error.message, variant: 'destructive' });
       } else {
         setMessages((msgRes.data ?? []) as Message[]);
+      }
+
+      if (!invRes.error) {
+        setInvites((invRes.data ?? []) as InviteEvent[]);
       }
 
       setLoading(false);
@@ -194,6 +246,45 @@ const Chat = () => {
     };
   }, [matchId]);
 
+  // ── Realtime subscription: date_invites for this match ────────────
+  useEffect(() => {
+    if (!matchId) return;
+
+    const channel = supabase
+      .channel(`invites:${matchId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'date_invites',
+          filter: `match_id=eq.${matchId}`,
+        },
+        (payload) => {
+          const inv = payload.new as InviteEvent;
+          setInvites((prev) => (prev.some((x) => x.id === inv.id) ? prev : [...prev, inv]));
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'date_invites',
+          filter: `match_id=eq.${matchId}`,
+        },
+        (payload) => {
+          const inv = payload.new as InviteEvent;
+          setInvites((prev) => prev.map((x) => (x.id === inv.id ? { ...x, ...inv } : x)));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [matchId]);
+
   // ── Typing broadcast channel ──────────────────────────────────────
   useEffect(() => {
     if (!matchId || !user) return;
@@ -222,7 +313,7 @@ const Chat = () => {
   // ── Auto-scroll on new messages ───────────────────────────────────
   useEffect(() => {
     listEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length]);
+  }, [messages.length, invites.length]);
 
   // ── Mark unread incoming messages as read ─────────────────────────
   useEffect(() => {
@@ -271,6 +362,15 @@ const Chat = () => {
 
   const headerName = useMemo(() => other?.name ?? 'Match', [other]);
   const headerPhoto = other?.photos?.[0];
+
+  const timeline = useMemo<TimelineItem[]>(() => {
+    const items: TimelineItem[] = [
+      ...messages.map<TimelineItem>((m) => ({ kind: 'msg', data: m })),
+      ...invites.map<TimelineItem>((i) => ({ kind: 'invite', data: i })),
+    ];
+    items.sort((a, b) => a.data.created_at.localeCompare(b.data.created_at));
+    return items;
+  }, [messages, invites]);
 
   const showMeetSuggestion = messages.length >= 5;
 
@@ -345,7 +445,7 @@ const Chat = () => {
       {/* Messages */}
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-md mx-auto px-3 py-5 space-y-4">
-          {messages.length === 0 ? (
+          {timeline.length === 0 ? (
             <div className="py-16 text-center">
               <p className="font-display text-lg text-foreground/80">
                 Nessun messaggio.
@@ -355,9 +455,59 @@ const Chat = () => {
               </p>
             </div>
           ) : (
-            messages.map((m, i) => {
+            timeline.map((item, i) => {
+              if (item.kind === 'invite') {
+                const inv = item.data;
+                const tipo = inviteTypeLabel(inv);
+                const luogo = invitePlace(inv);
+                const quando = formatInviteWhen(inv);
+                const detailParts = [tipo, luogo, quando].filter(Boolean);
+                const detail = detailParts.join(' · ');
+                const sender = inv.from_user_id === user?.id ? 'Tu' : (other?.name ?? 'Match');
+
+                if (inv.status === 'pending') {
+                  return (
+                    <div
+                      key={`inv-${inv.id}`}
+                      className="text-center italic"
+                      style={{ color: '#7a7570', fontSize: '12px' }}
+                    >
+                      💌 {sender} ha proposto: {detail}
+                    </div>
+                  );
+                }
+                if (inv.status === 'accepted') {
+                  return (
+                    <div
+                      key={`inv-${inv.id}`}
+                      className="text-center"
+                      style={{ color: '#d4a574', fontSize: '12px' }}
+                    >
+                      ✓ Appuntamento confermato — {detail}
+                    </div>
+                  );
+                }
+                if (inv.status === 'declined') {
+                  return (
+                    <div
+                      key={`inv-${inv.id}`}
+                      className="text-center"
+                      style={{ color: '#7a7570', fontSize: '12px' }}
+                    >
+                      ✕ Invito rifiutato
+                    </div>
+                  );
+                }
+                return null;
+              }
+
+              const m = item.data;
               const mine = m.sender_id === user?.id;
-              const prev = messages[i - 1];
+              // previous message-of-same-kind for time-grouping
+              let prev: Message | undefined;
+              for (let j = i - 1; j >= 0; j--) {
+                if (timeline[j].kind === 'msg') { prev = timeline[j].data as Message; break; }
+              }
               const showTime =
                 !prev ||
                 new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() > 5 * 60 * 1000 ||
