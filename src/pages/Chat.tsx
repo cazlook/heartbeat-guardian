@@ -246,6 +246,45 @@ const Chat = () => {
     };
   }, [matchId]);
 
+  // ── Realtime subscription: date_invites for this match ────────────
+  useEffect(() => {
+    if (!matchId) return;
+
+    const channel = supabase
+      .channel(`invites:${matchId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'date_invites',
+          filter: `match_id=eq.${matchId}`,
+        },
+        (payload) => {
+          const inv = payload.new as InviteEvent;
+          setInvites((prev) => (prev.some((x) => x.id === inv.id) ? prev : [...prev, inv]));
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'date_invites',
+          filter: `match_id=eq.${matchId}`,
+        },
+        (payload) => {
+          const inv = payload.new as InviteEvent;
+          setInvites((prev) => prev.map((x) => (x.id === inv.id ? { ...x, ...inv } : x)));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [matchId]);
+
   // ── Typing broadcast channel ──────────────────────────────────────
   useEffect(() => {
     if (!matchId || !user) return;
