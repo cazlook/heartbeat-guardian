@@ -338,6 +338,142 @@ const Matches = () => {
           </ul>
         )}
       </div>
+
+      <Dialog open={!!inviteDialogMatch} onOpenChange={(o) => !o && setInviteDialogMatch(null)}>
+        <DialogContent
+          className="rounded-sm sm:max-w-md"
+          style={{ background: '#111', border: '1px solid #2a2a2a', color: '#f0ece4' }}
+        >
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl leading-tight" style={{ color: '#f0ece4' }}>
+              Invita {inviteDialogMatch?.other?.name ?? ''} a uscire
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-5 pt-2">
+            {/* 1. Tipo incontro */}
+            <div className="space-y-2">
+              <Label className="text-[10px] uppercase tracking-[0.25em]" style={{ color: '#7a7570' }}>
+                Tipo di incontro
+              </Label>
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+                {INVITE_TYPES.map(({ value, label, Icon }) => {
+                  const selected = inviteType === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setInviteType(value)}
+                      className="shrink-0 inline-flex items-center gap-1.5 rounded-sm border px-3 py-2 text-xs uppercase tracking-wider transition-colors"
+                      style={{
+                        background: selected ? '#d4a574' : '#1a1a1a',
+                        color: selected ? '#0d0d0d' : '#7a7570',
+                        borderColor: selected ? '#d4a574' : '#2a2a2a',
+                      }}
+                    >
+                      <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 2. Luogo */}
+            <div className="space-y-2">
+              <Label htmlFor="invite-location" className="text-[10px] uppercase tracking-[0.25em]" style={{ color: '#7a7570' }}>
+                Luogo
+              </Label>
+              <Input
+                id="invite-location"
+                value={inviteLocation}
+                onChange={(e) => setInviteLocation(e.target.value)}
+                placeholder="Es. Caffè San Marco, Napoli"
+                maxLength={120}
+                className="rounded-sm"
+                style={{ background: '#1a1a1a', borderColor: '#2a2a2a', color: '#f0ece4' }}
+              />
+            </div>
+
+            {/* 3. Data + Ora */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="invite-date" className="text-[10px] uppercase tracking-[0.25em]" style={{ color: '#7a7570' }}>
+                  Data
+                </Label>
+                <Input
+                  id="invite-date"
+                  type="date"
+                  value={inviteDate}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setInviteDate(e.target.value)}
+                  className="rounded-sm"
+                  style={{ background: '#1a1a1a', borderColor: '#2a2a2a', color: '#f0ece4' }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="invite-time" className="text-[10px] uppercase tracking-[0.25em]" style={{ color: '#7a7570' }}>
+                  Orario
+                </Label>
+                <Input
+                  id="invite-time"
+                  type="time"
+                  value={inviteTime}
+                  onChange={(e) => setInviteTime(e.target.value)}
+                  className="rounded-sm"
+                  style={{ background: '#1a1a1a', borderColor: '#2a2a2a', color: '#f0ece4' }}
+                />
+              </div>
+            </div>
+
+            {/* 4. Nota */}
+            <div className="space-y-2">
+              <Label htmlFor="invite-note" className="text-[10px] uppercase tracking-[0.25em]" style={{ color: '#7a7570' }}>
+                Nota (opzionale)
+              </Label>
+              <Textarea
+                id="invite-note"
+                value={inviteNote}
+                onChange={(e) => setInviteNote(e.target.value.slice(0, 150))}
+                placeholder="Un messaggio per accompagnare l'invito…"
+                maxLength={150}
+                rows={3}
+                className="rounded-sm resize-none"
+                style={{ background: '#1a1a1a', borderColor: '#2a2a2a', color: '#f0ece4' }}
+              />
+              <div className="text-right text-[10px]" style={{ color: '#7a7570' }}>
+                {inviteNote.length}/150
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center gap-2 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setInviteDialogMatch(null)}
+                className="flex-1 h-10 rounded-sm uppercase tracking-wider text-[11px]"
+                style={{ color: '#7a7570' }}
+              >
+                Annulla
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSubmitInvite}
+                disabled={invitingId === inviteDialogMatch?.id}
+                className="flex-1 h-10 rounded-sm uppercase tracking-wider text-[11px] font-medium hover:opacity-90"
+                style={{ background: '#d4a574', color: '#0d0d0d' }}
+              >
+                {invitingId === inviteDialogMatch?.id ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  'Invia invito'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
