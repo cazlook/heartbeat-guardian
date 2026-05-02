@@ -363,6 +363,15 @@ const Chat = () => {
   const headerName = useMemo(() => other?.name ?? 'Match', [other]);
   const headerPhoto = other?.photos?.[0];
 
+  const timeline = useMemo<TimelineItem[]>(() => {
+    const items: TimelineItem[] = [
+      ...messages.map<TimelineItem>((m) => ({ kind: 'msg', data: m })),
+      ...invites.map<TimelineItem>((i) => ({ kind: 'invite', data: i })),
+    ];
+    items.sort((a, b) => a.data.created_at.localeCompare(b.data.created_at));
+    return items;
+  }, [messages, invites]);
+
   const showMeetSuggestion = messages.length >= 5;
 
   const handleSendInvite = () => {
