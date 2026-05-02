@@ -500,6 +500,123 @@ const Matches = () => {
             })}
           </ul>
         )}
+          </TabsContent>
+
+          <TabsContent value="invites" className="mt-6">
+            {loadingInvites ? (
+              <div className="flex justify-center py-16">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            ) : receivedInvites.length === 0 ? (
+              <div className="border border-border/60 rounded-sm py-16 px-8 text-center space-y-2">
+                <p className="font-display text-2xl italic leading-tight" style={{ color: '#f0ece4' }}>
+                  Nessun invito ricevuto.
+                </p>
+                <p className="text-sm" style={{ color: '#7a7570' }}>
+                  Quando qualcuno ti invita a uscire, lo vedrai qui.
+                </p>
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {receivedInvites.map((inv) => {
+                  const typeKey = (inv.invite_type ?? inv.type ?? '').toLowerCase();
+                  const meta = INVITE_TYPE_META[typeKey];
+                  const Icon = meta?.Icon ?? Sparkles;
+                  const typeLabel = meta?.label ?? (typeKey ? typeKey.charAt(0).toUpperCase() + typeKey.slice(1) : 'Incontro');
+                  const senderName = inv.sender?.name ?? 'Senza nome';
+                  const senderPhoto = inv.sender?.photos?.[0];
+                  const place = inv.location ?? inv.area ?? '';
+                  const when = formatItalianDateTime(inv);
+                  const isFading = fadingId === inv.id;
+                  const isAccepted = inv.status === 'accepted';
+                  const isResponding = respondingId === inv.id;
+
+                  return (
+                    <li
+                      key={inv.id}
+                      className="transition-opacity duration-300"
+                      style={{ opacity: isFading ? 0 : 1 }}
+                    >
+                      <div
+                        className="rounded-sm p-4 space-y-3"
+                        style={{ background: '#111', border: '1px solid #2a2a2a' }}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="h-12 w-12 rounded-sm overflow-hidden bg-muted shrink-0">
+                            {senderPhoto ? (
+                              <img src={senderPhoto} alt={senderName} className="h-full w-full object-cover photo-color" />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-muted-foreground text-xs">?</div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-display text-2xl leading-tight truncate" style={{ color: '#f0ece4' }}>
+                              {senderName}
+                            </div>
+                            <div className="inline-flex items-center gap-1.5 mt-1 text-xs uppercase tracking-wider" style={{ color: '#f0ece4' }}>
+                              <Icon className="h-3.5 w-3.5" strokeWidth={1.75} style={{ color: '#d4a574' }} />
+                              {typeLabel}
+                            </div>
+                          </div>
+                        </div>
+
+                        {place && (
+                          <div className="flex items-center gap-1.5 text-sm" style={{ color: '#f0ece4' }}>
+                            <MapPin className="h-3.5 w-3.5" strokeWidth={1.75} style={{ color: '#d4a574' }} />
+                            <span className="truncate">{place}</span>
+                          </div>
+                        )}
+
+                        {when && (
+                          <div className="text-sm" style={{ color: '#f0ece4' }}>
+                            {when}
+                          </div>
+                        )}
+
+                        {inv.note && (
+                          <p className="text-sm italic" style={{ color: '#7a7570' }}>
+                            "{inv.note}"
+                          </p>
+                        )}
+
+                        {isAccepted ? (
+                          <div className="pt-1 text-sm uppercase tracking-wider inline-flex items-center gap-1.5" style={{ color: '#d4a574' }}>
+                            <Check className="h-4 w-4" strokeWidth={2} />
+                            Accettato
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 pt-1">
+                            <Button
+                              size="sm"
+                              disabled={isResponding}
+                              onClick={() => handleAcceptInvite(inv.id)}
+                              className="flex-1 h-10 rounded-sm uppercase tracking-wider text-[11px] font-medium hover:opacity-90"
+                              style={{ background: '#d4a574', color: '#0d0d0d' }}
+                            >
+                              {isResponding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" strokeWidth={2} />}
+                              Accetta
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={isResponding}
+                              onClick={() => handleDeclineInvite(inv.id)}
+                              className="flex-1 h-10 rounded-sm uppercase tracking-wider text-[11px] font-medium bg-transparent hover:bg-transparent"
+                              style={{ border: '1px solid #d4a574', color: '#d4a574' }}
+                            >
+                              <X className="h-3.5 w-3.5" strokeWidth={2} />
+                              Rifiuta
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Dialog open={!!inviteDialogMatch} onOpenChange={(o) => !o && setInviteDialogMatch(null)}>
