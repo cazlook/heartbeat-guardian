@@ -294,8 +294,6 @@ const Chat = () => {
     const channel = supabase
       .channel(`typing-${matchId}`, { config: { broadcast: { self: false } } })
       .on('broadcast', { event: 'typing' }, (payload) => {
-        const fromId0 = (payload.payload as { from?: string } | undefined)?.from;
-        void fromId0;
         const fromId = (payload.payload as { from?: string } | undefined)?.from;
         if (!fromId || fromId === user.id) return;
         setOtherTyping(true);
