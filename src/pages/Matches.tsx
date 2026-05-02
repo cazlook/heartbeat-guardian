@@ -146,23 +146,40 @@ const Matches = () => {
 
   const handleInvite = async (m: MatchRow) => {
     if (!user) return;
+    setInviteDialogMatch(m);
+    setInviteType(null);
+    setInviteLocation('');
+    setInviteDate('');
+    setInviteTime('');
+    setInviteNote('');
+  };
+
+  const handleSubmitInvite = async () => {
+    if (!user || !inviteDialogMatch) return;
+    if (!inviteType || !inviteLocation.trim() || !inviteDate || !inviteTime) {
+      toast({ title: 'Compila tutti i campi obbligatori', variant: 'destructive' });
+      return;
+    }
+    const m = inviteDialogMatch;
     setInvitingId(m.id);
     const toUserId = m.user_a === user.id ? m.user_b : m.user_a;
+    const scheduledAt = new Date(`${inviteDate}T${inviteTime}`).toISOString();
     const { error } = await supabase.from('date_invites').insert({
       match_id: m.id,
       from_user_id: user.id,
       to_user_id: toUserId,
-      type: 'caffè',
-      day: 'venerdì',
-      slot: '19:00 – 21:00',
-      area: null,
+      invite_type: inviteType,
+      location: inviteLocation.trim(),
+      scheduled_at: scheduledAt,
+      note: inviteNote.trim() || null,
     });
     setInvitingId(null);
     if (error) {
-      toast({ title: 'Errore invito', description: error.message, variant: 'destructive' });
+      toast({ title: "Errore nell'invio dell'invito", description: error.message, variant: 'destructive' });
       return;
     }
     setSentInvites((prev) => new Set(prev).add(m.id));
+    setInviteDialogMatch(null);
     toast({
       title: 'Invito inviato',
       description: `${m.other?.name ?? 'questa persona'} riceverà la tua proposta.`,
