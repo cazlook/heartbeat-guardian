@@ -36,7 +36,44 @@ interface MatchRow {
   } | null;
 }
 
-const formatRelative = (iso: string): string => {
+interface ReceivedInvite {
+  id: string;
+  from_user_id: string;
+  invite_type: string | null;
+  type: string | null;
+  location: string | null;
+  scheduled_at: string | null;
+  day: string | null;
+  slot: string | null;
+  area: string | null;
+  note: string | null;
+  status: string;
+  sender: { id: string; name: string | null; photos: string[] } | null;
+}
+
+const INVITE_TYPE_META: Record<string, { label: string; Icon: typeof Coffee }> = {
+  caffe: { label: 'Caffè', Icon: Coffee },
+  aperitivo: { label: 'Aperitivo', Icon: Wine },
+  cena: { label: 'Cena', Icon: UtensilsCrossed },
+  passeggiata: { label: 'Passeggiata', Icon: Footprints },
+  altro: { label: 'Altro', Icon: Sparkles },
+};
+
+const formatItalianDateTime = (inv: ReceivedInvite): string => {
+  if (inv.scheduled_at) {
+    const d = new Date(inv.scheduled_at);
+    const datePart = new Intl.DateTimeFormat('it-IT', {
+      weekday: 'long', day: 'numeric', month: 'long',
+    }).format(d);
+    const timePart = new Intl.DateTimeFormat('it-IT', {
+      hour: '2-digit', minute: '2-digit',
+    }).format(d);
+    const cap = datePart.charAt(0).toUpperCase() + datePart.slice(1);
+    return `${cap} · ${timePart}`;
+  }
+  const parts = [inv.day, inv.slot].filter(Boolean);
+  return parts.join(' · ');
+};
   const dayMs = 24 * 60 * 60 * 1000;
   const dayThen = new Date(iso); dayThen.setHours(0, 0, 0, 0);
   const dayNow = new Date(); dayNow.setHours(0, 0, 0, 0);
