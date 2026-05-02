@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, MessageSquare, CalendarHeart, Check, Coffee, Wine, UtensilsCrossed, Footprints, Sparkles } from 'lucide-react';
+import { Loader2, MessageSquare, CalendarHeart, Check, Coffee, Wine, UtensilsCrossed, Footprints, Sparkles, MapPin, X } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -34,6 +35,45 @@ interface MatchRow {
     photos: string[];
   } | null;
 }
+
+interface ReceivedInvite {
+  id: string;
+  from_user_id: string;
+  invite_type: string | null;
+  type: string | null;
+  location: string | null;
+  scheduled_at: string | null;
+  day: string | null;
+  slot: string | null;
+  area: string | null;
+  note: string | null;
+  status: string;
+  sender: { id: string; name: string | null; photos: string[] } | null;
+}
+
+const INVITE_TYPE_META: Record<string, { label: string; Icon: typeof Coffee }> = {
+  caffe: { label: 'Caffè', Icon: Coffee },
+  aperitivo: { label: 'Aperitivo', Icon: Wine },
+  cena: { label: 'Cena', Icon: UtensilsCrossed },
+  passeggiata: { label: 'Passeggiata', Icon: Footprints },
+  altro: { label: 'Altro', Icon: Sparkles },
+};
+
+const formatItalianDateTime = (inv: ReceivedInvite): string => {
+  if (inv.scheduled_at) {
+    const d = new Date(inv.scheduled_at);
+    const datePart = new Intl.DateTimeFormat('it-IT', {
+      weekday: 'long', day: 'numeric', month: 'long',
+    }).format(d);
+    const timePart = new Intl.DateTimeFormat('it-IT', {
+      hour: '2-digit', minute: '2-digit',
+    }).format(d);
+    const cap = datePart.charAt(0).toUpperCase() + datePart.slice(1);
+    return `${cap} · ${timePart}`;
+  }
+  const parts = [inv.day, inv.slot].filter(Boolean);
+  return parts.join(' · ');
+};
 
 const formatRelative = (iso: string): string => {
   const dayMs = 24 * 60 * 60 * 1000;
@@ -70,6 +110,10 @@ const Matches = () => {
   const [inviteDate, setInviteDate] = useState('');
   const [inviteTime, setInviteTime] = useState('');
   const [inviteNote, setInviteNote] = useState('');
+  const [receivedInvites, setReceivedInvites] = useState<ReceivedInvite[]>([]);
+  const [loadingInvites, setLoadingInvites] = useState(true);
+  const [respondingId, setRespondingId] = useState<string | null>(null);
+  const [fadingId, setFadingId] = useState<string | null>(null);
 
   useEffect(() => {
     markAllSeen();
@@ -144,6 +188,93 @@ const Matches = () => {
     return () => { cancelled = true; };
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+
+    (async () => {
+      setLoadingInvites(true);
+      const { data: invs, error } = await supabase
+        .from('date_invites')
+        .select('id, from_user_id, invite_type, type, location, scheduled_at, day, slot, area, note, status')
+        .eq('to_user_id', user.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (cancelled) return;
+      if (error) {
+        toast({ title: 'Errore caricamento inviti', description: error.message, variant: 'destructive' });
+        setLoadingInvites(false);
+        return;
+      }
+
+      const senderIds = Array.from(new Set((invs ?? []).map((i) => i.from_user_id)));
+      let sendersById: Record<string, { id: string; name: string | null; photos: string[] }> = {};
+      if (senderIds.length > 0) {
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, name, photos')
+          .in('id', senderIds);
+        sendersById = Object.fromEntries((profs ?? []).map((p) => [p.id, p]));
+      }
+
+      const enriched: ReceivedInvite[] = (invs ?? []).map((i) => ({
+        id: i.id,
+        from_user_id: i.from_user_id,
+        invite_type: i.invite_type,
+        type: i.type,
+        location: i.location,
+        scheduled_at: i.scheduled_at,
+        day: i.day,
+        slot: i.slot,
+        area: i.area,
+        note: i.note,
+        status: i.status,
+        sender: sendersById[i.from_user_id] ?? null,
+      }));
+
+      if (!cancelled) {
+        setReceivedInvites(enriched);
+        setLoadingInvites(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [user]);
+
+  const handleAcceptInvite = async (inviteId: string) => {
+    setRespondingId(inviteId);
+    const { error } = await supabase
+      .from('date_invites')
+      .update({ status: 'accepted' })
+      .eq('id', inviteId);
+    setRespondingId(null);
+    if (error) {
+      toast({ title: "Errore nell'aggiornamento dell'invito", description: error.message, variant: 'destructive' });
+      return;
+    }
+    setReceivedInvites((prev) => prev.map((i) => (i.id === inviteId ? { ...i, status: 'accepted' } : i)));
+    toast({ title: 'Invito accettato' });
+  };
+
+  const handleDeclineInvite = async (inviteId: string) => {
+    setRespondingId(inviteId);
+    const { error } = await supabase
+      .from('date_invites')
+      .update({ status: 'declined' })
+      .eq('id', inviteId);
+    setRespondingId(null);
+    if (error) {
+      toast({ title: "Errore nell'aggiornamento dell'invito", description: error.message, variant: 'destructive' });
+      return;
+    }
+    setFadingId(inviteId);
+    setTimeout(() => {
+      setReceivedInvites((prev) => prev.filter((i) => i.id !== inviteId));
+      setFadingId((curr) => (curr === inviteId ? null : curr));
+    }, 300);
+  };
+
   const handleInvite = async (m: MatchRow) => {
     if (!user) return;
     setInviteDialogMatch(m);
@@ -204,6 +335,38 @@ const Matches = () => {
           </Button>
         </div>
 
+        <Tabs defaultValue="matches" className="w-full">
+          <TabsList className="bg-transparent p-0 h-auto w-full justify-start gap-6 border-b border-border/40 rounded-none">
+            <TabsTrigger
+              value="matches"
+              className="bg-transparent rounded-none px-0 pb-3 pt-0 uppercase tracking-[0.1em] text-sm border-b-2 border-transparent text-[#7a7570] data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-[#f0ece4] data-[state=active]:border-[#d4a574]"
+            >
+              Match
+            </TabsTrigger>
+            <TabsTrigger
+              value="invites"
+              className="bg-transparent rounded-none px-0 pb-3 pt-0 uppercase tracking-[0.1em] text-sm border-b-2 border-transparent text-[#7a7570] data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-[#f0ece4] data-[state=active]:border-[#d4a574] inline-flex items-center gap-2"
+            >
+              Inviti
+              {receivedInvites.length > 0 && (
+                <span
+                  className="font-mono-bpm"
+                  style={{
+                    background: '#d4a574',
+                    color: '#0d0d0d',
+                    fontSize: '10px',
+                    letterSpacing: '0.08em',
+                    padding: '1px 6px',
+                    borderRadius: '2px',
+                  }}
+                >
+                  {receivedInvites.length}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="matches" className="mt-6">
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -337,6 +500,123 @@ const Matches = () => {
             })}
           </ul>
         )}
+          </TabsContent>
+
+          <TabsContent value="invites" className="mt-6">
+            {loadingInvites ? (
+              <div className="flex justify-center py-16">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            ) : receivedInvites.length === 0 ? (
+              <div className="border border-border/60 rounded-sm py-16 px-8 text-center space-y-2">
+                <p className="font-display text-2xl italic leading-tight" style={{ color: '#f0ece4' }}>
+                  Nessun invito ricevuto.
+                </p>
+                <p className="text-sm" style={{ color: '#7a7570' }}>
+                  Quando qualcuno ti invita a uscire, lo vedrai qui.
+                </p>
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {receivedInvites.map((inv) => {
+                  const typeKey = (inv.invite_type ?? inv.type ?? '').toLowerCase();
+                  const meta = INVITE_TYPE_META[typeKey];
+                  const Icon = meta?.Icon ?? Sparkles;
+                  const typeLabel = meta?.label ?? (typeKey ? typeKey.charAt(0).toUpperCase() + typeKey.slice(1) : 'Incontro');
+                  const senderName = inv.sender?.name ?? 'Senza nome';
+                  const senderPhoto = inv.sender?.photos?.[0];
+                  const place = inv.location ?? inv.area ?? '';
+                  const when = formatItalianDateTime(inv);
+                  const isFading = fadingId === inv.id;
+                  const isAccepted = inv.status === 'accepted';
+                  const isResponding = respondingId === inv.id;
+
+                  return (
+                    <li
+                      key={inv.id}
+                      className="transition-opacity duration-300"
+                      style={{ opacity: isFading ? 0 : 1 }}
+                    >
+                      <div
+                        className="rounded-sm p-4 space-y-3"
+                        style={{ background: '#111', border: '1px solid #2a2a2a' }}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="h-12 w-12 rounded-sm overflow-hidden bg-muted shrink-0">
+                            {senderPhoto ? (
+                              <img src={senderPhoto} alt={senderName} className="h-full w-full object-cover photo-color" />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-muted-foreground text-xs">?</div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-display text-2xl leading-tight truncate" style={{ color: '#f0ece4' }}>
+                              {senderName}
+                            </div>
+                            <div className="inline-flex items-center gap-1.5 mt-1 text-xs uppercase tracking-wider" style={{ color: '#f0ece4' }}>
+                              <Icon className="h-3.5 w-3.5" strokeWidth={1.75} style={{ color: '#d4a574' }} />
+                              {typeLabel}
+                            </div>
+                          </div>
+                        </div>
+
+                        {place && (
+                          <div className="flex items-center gap-1.5 text-sm" style={{ color: '#f0ece4' }}>
+                            <MapPin className="h-3.5 w-3.5" strokeWidth={1.75} style={{ color: '#d4a574' }} />
+                            <span className="truncate">{place}</span>
+                          </div>
+                        )}
+
+                        {when && (
+                          <div className="text-sm" style={{ color: '#f0ece4' }}>
+                            {when}
+                          </div>
+                        )}
+
+                        {inv.note && (
+                          <p className="text-sm italic" style={{ color: '#7a7570' }}>
+                            "{inv.note}"
+                          </p>
+                        )}
+
+                        {isAccepted ? (
+                          <div className="pt-1 text-sm uppercase tracking-wider inline-flex items-center gap-1.5" style={{ color: '#d4a574' }}>
+                            <Check className="h-4 w-4" strokeWidth={2} />
+                            Accettato
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 pt-1">
+                            <Button
+                              size="sm"
+                              disabled={isResponding}
+                              onClick={() => handleAcceptInvite(inv.id)}
+                              className="flex-1 h-10 rounded-sm uppercase tracking-wider text-[11px] font-medium hover:opacity-90"
+                              style={{ background: '#d4a574', color: '#0d0d0d' }}
+                            >
+                              {isResponding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" strokeWidth={2} />}
+                              Accetta
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={isResponding}
+                              onClick={() => handleDeclineInvite(inv.id)}
+                              className="flex-1 h-10 rounded-sm uppercase tracking-wider text-[11px] font-medium bg-transparent hover:bg-transparent"
+                              style={{ border: '1px solid #d4a574', color: '#d4a574' }}
+                            >
+                              <X className="h-3.5 w-3.5" strokeWidth={2} />
+                              Rifiuta
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Dialog open={!!inviteDialogMatch} onOpenChange={(o) => !o && setInviteDialogMatch(null)}>
