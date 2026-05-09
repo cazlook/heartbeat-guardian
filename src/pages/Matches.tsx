@@ -423,7 +423,13 @@ const Matches = () => {
 
                     {/* Top row */}
                     <div className="flex items-start gap-4">
-                      <div className="h-16 w-16 rounded-sm overflow-hidden bg-muted shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => m.other?.id && navigate(`/profile/${m.other.id}`)}
+                        disabled={!m.other?.id}
+                        aria-label={`Apri profilo di ${name}`}
+                        className="h-16 w-16 rounded-sm overflow-hidden bg-muted shrink-0 hover:opacity-85 transition-opacity disabled:cursor-default"
+                      >
                         {photo ? (
                           <img
                             src={photo}
@@ -435,13 +441,18 @@ const Matches = () => {
                             ?
                           </div>
                         )}
-                      </div>
+                      </button>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-3 pr-16">
-                          <div className="font-display text-2xl text-foreground truncate leading-tight">
+                          <button
+                            type="button"
+                            onClick={() => m.other?.id && navigate(`/profile/${m.other.id}`)}
+                            disabled={!m.other?.id}
+                            className="font-display text-2xl text-foreground truncate leading-tight text-left hover:opacity-85 transition-opacity disabled:cursor-default"
+                          >
                             {name}
-                          </div>
+                          </button>
                           <span className="font-mono-bpm text-3xl text-primary leading-none shrink-0">
                             {scoreInt}
                           </span>

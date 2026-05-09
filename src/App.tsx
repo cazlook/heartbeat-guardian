@@ -14,6 +14,7 @@ import Discovery from "./pages/Discovery.tsx";
 import Matches from "./pages/Matches.tsx";
 import Chat from "./pages/Chat.tsx";
 import ProfileSetup from "./pages/ProfileSetup.tsx";
+import Profile from "./pages/Profile.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { InAppBanner } from "@/components/InAppBanner";
 import { useInAppNotifications } from "@/hooks/useInAppNotifications";
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/matches" element={<ProtectedRoute><Matches /></ProtectedRoute>} />
               <Route path="/chat/:matchId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
               <Route path="/profile/setup" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
+              <Route path="/profile/:userId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/debug" element={<ProtectedRoute><Debug /></ProtectedRoute>} />
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

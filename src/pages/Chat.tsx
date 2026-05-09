@@ -11,7 +11,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, Send, CalendarHeart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -118,6 +118,7 @@ const formatTimestamp = (iso: string): string => {
 
 const Chat = () => {
   const { matchId } = useParams<{ matchId: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
@@ -402,7 +403,13 @@ const Chat = () => {
             </Link>
           </Button>
 
-          <div className="relative h-10 w-10 shrink-0">
+          <button
+            type="button"
+            onClick={() => other?.id && navigate(`/profile/${other.id}`)}
+            disabled={!other?.id}
+            aria-label={`Apri profilo di ${headerName}`}
+            className="relative h-10 w-10 shrink-0 rounded-full hover:opacity-85 transition-opacity disabled:cursor-default"
+          >
             <div className="h-10 w-10 rounded-full overflow-hidden bg-muted ring-1 ring-border/60">
               {headerPhoto ? (
                 <img
@@ -421,12 +428,17 @@ const Chat = () => {
               className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full ring-2 ring-background"
               style={{ backgroundColor: '#d4a574' }}
             />
-          </div>
+          </button>
 
           <div className="min-w-0 flex-1">
-            <h1 className="font-display text-xl leading-tight truncate text-foreground">
+            <button
+              type="button"
+              onClick={() => other?.id && navigate(`/profile/${other.id}`)}
+              disabled={!other?.id}
+              className="font-display text-xl leading-tight truncate text-foreground text-left hover:opacity-85 transition-opacity disabled:cursor-default"
+            >
               {headerName}
-            </h1>
+            </button>
             <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
               {otherTyping ? 'sta scrivendo…' : 'Online'}
             </p>
