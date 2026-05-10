@@ -611,8 +611,17 @@ const Discovery = () => {
     setDetailOpen(true);
   };
 
+  const isMeasuring = activeProfileId !== null;
+
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <style>{`
+        @keyframes hs-measure-pulse {
+          0%, 100% { transform: scale(1); opacity: 0.85; }
+          50% { transform: scale(1.12); opacity: 1; }
+        }
+      `}</style>
+      <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/70 border-b border-border/50">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
           <h1 className="font-display text-2xl tracking-tight flex items-center gap-2 text-foreground">
