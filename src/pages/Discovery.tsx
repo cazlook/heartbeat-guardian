@@ -896,6 +896,7 @@ const Discovery = () => {
         </>
       )}
     </div>
+    </>
   );
 };
 
