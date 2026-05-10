@@ -628,26 +628,44 @@ const Discovery = () => {
             <Heart className="h-4 w-4 fill-current text-primary" strokeWidth={1.5} />
             <span>HeartSync</span>
           </h1>
-          <div className="flex items-center gap-1">
-            <Button size="sm" variant="ghost" onClick={() => setEditOpen(true)} aria-label="Modifica profilo">
-              <UserCog className="h-4 w-4" />
-            </Button>
-            <Button asChild size="sm" variant="ghost" className="relative">
-              <Link to="/matches">
-                Matches
-                {unseenMatches > 0 && (
-                  <span
-                    className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-medium flex items-center justify-center"
-                    aria-label={`${unseenMatches} nuovi match`}
-                  >
-                    {unseenMatches > 9 ? '9+' : unseenMatches}
-                  </span>
-                )}
-              </Link>
-            </Button>
-            <Button size="sm" variant="ghost" onClick={signOut} aria-label="Logout">
-              <LogOut className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center gap-2">
+            {isMeasuring && (
+              <div
+                className="flex items-center gap-1.5 px-2 py-1 rounded-full"
+                style={{ backgroundColor: '#0d0d0d' }}
+                aria-live="polite"
+              >
+                <Heart
+                  className="h-3.5 w-3.5"
+                  style={{ color: '#d4a574', animation: 'hs-measure-pulse 1.6s ease-in-out infinite' }}
+                  strokeWidth={1.75}
+                />
+                <span className="text-[10px] uppercase tracking-[0.2em]" style={{ color: '#f0ece4' }}>
+                  Misurazione in corso
+                </span>
+              </div>
+            )}
+            <div className="flex items-center gap-1">
+              <Button size="sm" variant="ghost" onClick={() => setEditOpen(true)} aria-label="Modifica profilo">
+                <UserCog className="h-4 w-4" />
+              </Button>
+              <Button asChild size="sm" variant="ghost" className="relative">
+                <Link to="/matches">
+                  Matches
+                  {unseenMatches > 0 && (
+                    <span
+                      className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-medium flex items-center justify-center"
+                      aria-label={`${unseenMatches} nuovi match`}
+                    >
+                      {unseenMatches > 9 ? '9+' : unseenMatches}
+                    </span>
+                  )}
+                </Link>
+              </Button>
+              <Button size="sm" variant="ghost" onClick={signOut} aria-label="Logout">
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
