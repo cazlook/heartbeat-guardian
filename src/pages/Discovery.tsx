@@ -675,23 +675,48 @@ const Discovery = () => {
         </div>
       </header>
 
-      <main className="max-w-md mx-auto px-4 py-6 space-y-5">
+      <main className="max-w-md mx-auto px-4 py-6">
         {profiles.length === 0 ? (
           <Card className="p-6 text-center text-sm text-muted-foreground">
             Nessun nuovo profilo per ora. Torna più tardi.
           </Card>
-        ) : (
-          profiles.map((p) => (
-            <ProfileCardView
+        ) : (() => {
+          const safeIndex = ((currentIndex % profiles.length) + profiles.length) % profiles.length;
+          const p = profiles[safeIndex];
+          const tx = exit ? exit.dx : drag.dx;
+          const ty = exit ? exit.dy : drag.dy;
+          const rot = tx / 20;
+          const opacity = exit ? 0 : Math.max(0.4, 1 - Math.hypot(drag.dx, drag.dy) / 600);
+          const transition = isDragging
+            ? 'none'
+            : exit
+              ? `transform ${EXIT_DURATION_MS}ms cubic-bezier(0.22,1,0.36,1), opacity ${EXIT_DURATION_MS}ms ease-out`
+              : 'transform 220ms cubic-bezier(0.22,1,0.36,1), opacity 220ms ease-out';
+          return (
+            <div
               key={p.id}
-              profile={p}
-              ref={setCardRef(p.id)}
-              isActive={activeProfileId === p.id}
-              isPulsing={pulseProfileId === p.id}
-              onOpenDetail={() => openDetail(p)}
-            />
-          ))
-        )}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerEnd}
+              onPointerCancel={handlePointerEnd}
+              style={{
+                touchAction: 'none',
+                transform: `translate3d(${tx}px, ${ty}px, 0) rotate(${rot}deg)`,
+                opacity,
+                transition,
+                willChange: 'transform, opacity',
+                animation: !isDragging && !exit ? 'hs-card-enter 320ms ease-out' : undefined,
+              }}
+            >
+              <ProfileCardView
+                profile={p}
+                isActive={activeProfileId === p.id}
+                isPulsing={pulseProfileId === p.id}
+                onOpenDetail={() => openDetail(p)}
+              />
+            </div>
+          );
+        })()}
       </main>
 
       <ProfileDetailSheet
