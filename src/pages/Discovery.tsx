@@ -404,70 +404,75 @@ const Discovery = () => {
     };
   }, [mockSimulator]);
 
-  // ── Track which card is in view (intersection observer) ────────────
-  const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  // ── Swipe navigation (Tinder-style, looped) ────────────────────────
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [drag, setDrag] = useState<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
+  const [exit, setExit] = useState<{ dx: number; dy: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const pointerIdRef = useRef<number | null>(null);
 
-  // Stable ref callback per profile id — avoids React detaching/reattaching
-  // the ref on every render (which would happen if we returned a fresh fn).
-  const refSettersRef = useRef<Map<string, (el: HTMLDivElement | null) => void>>(new Map());
-  const setCardRef = useCallback((id: string) => {
-    let setter = refSettersRef.current.get(id);
-    if (!setter) {
-      setter = (el: HTMLDivElement | null) => {
-        if (el) cardRefs.current.set(id, el);
-        else cardRefs.current.delete(id);
-      };
-      refSettersRef.current.set(id, setter);
-    }
-    return setter;
-  }, []);
-
+  // Sync active profile with current index
   useEffect(() => {
     if (profiles.length === 0) return;
-
-    // Fallback: immediately set the first profile as active so the debug panel
-    // and reaction pipeline work even before the observer fires.
-    if (!activeProfileRef.current) {
-      const firstId = profiles[0].id;
-      activeProfileRef.current = firstId;
-      setActiveProfileId(firstId);
-      console.log('[Discovery] fallback active profile →', firstId);
+    const safeIndex = ((currentIndex % profiles.length) + profiles.length) % profiles.length;
+    const id = profiles[safeIndex]?.id ?? null;
+    if (id && id !== activeProfileRef.current) {
+      activeProfileRef.current = id;
+      setActiveProfileId(id);
+      reactionWindowRef.current = null;
+      console.log('[Discovery] swipe → active profile', id);
     }
+  }, [currentIndex, profiles]);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const top = entries
-          .filter((e) => e.isIntersecting && e.intersectionRatio >= VISIBILITY_THRESHOLD)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (top) {
-          const id = (top.target as HTMLElement).dataset.profileId ?? null;
-          if (id && id !== activeProfileRef.current) {
-            activeProfileRef.current = id;
-            setActiveProfileId(id);
-            reactionWindowRef.current = null;
-            console.log('[Discovery] observer → active profile', id);
-          }
-        }
-      },
-      { threshold: [0, 0.15, VISIBILITY_THRESHOLD, 0.6, 0.9, 1] },
-    );
+  const SWIPE_THRESHOLD_PX = 80;
+  const SWIPE_VELOCITY = 0.5; // px/ms
+  const EXIT_DURATION_MS = 280;
 
-    // Observe everything currently in the map, then re-check shortly after
-    // to catch refs attached after this effect ran (rare but defensive).
-    const observeAll = () => {
-      cardRefs.current.forEach((el, id) => {
-        observer.observe(el);
-        console.log('[Discovery] observing card', id);
-      });
-    };
-    observeAll();
-    const t = window.setTimeout(observeAll, 50);
+  const commitSwipe = useCallback((dx: number, dy: number) => {
+    // Amplify in dominant axis to fling off-screen
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+    const useX = absX >= absY;
+    const exitDx = useX ? Math.sign(dx) * Math.max(absX, 600) : dx * 1.4;
+    const exitDy = useX ? dy * 1.4 : Math.sign(dy) * Math.max(absY, 800);
+    setExit({ dx: exitDx, dy: exitDy });
+    setDrag({ dx: 0, dy: 0 });
+    window.setTimeout(() => {
+      setExit(null);
+      setCurrentIndex((i) => (profilesRef.current.length === 0 ? 0 : (i + 1) % profilesRef.current.length));
+    }, EXIT_DURATION_MS);
+  }, []);
 
-    return () => {
-      window.clearTimeout(t);
-      observer.disconnect();
-    };
-  }, [profiles]);
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (exit) return;
+    pointerIdRef.current = e.pointerId;
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+    dragStartRef.current = { x: e.clientX, y: e.clientY, t: performance.now() };
+    setIsDragging(true);
+  }, [exit]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragStartRef.current || pointerIdRef.current !== e.pointerId) return;
+    setDrag({ dx: e.clientX - dragStartRef.current.x, dy: e.clientY - dragStartRef.current.y });
+  }, []);
+
+  const handlePointerEnd = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragStartRef.current || pointerIdRef.current !== e.pointerId) return;
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+    const dt = Math.max(1, performance.now() - dragStartRef.current.t);
+    const dist = Math.hypot(dx, dy);
+    const velocity = dist / dt;
+    dragStartRef.current = null;
+    pointerIdRef.current = null;
+    setIsDragging(false);
+    if (dist >= SWIPE_THRESHOLD_PX || velocity >= SWIPE_VELOCITY) {
+      commitSwipe(dx, dy);
+    } else {
+      setDrag({ dx: 0, dy: 0 });
+    }
+  }, [commitSwipe]);
 
 
   // ── Debug: prime baseline so SignalProcessor exits learning phase ──
@@ -620,6 +625,10 @@ const Discovery = () => {
           0%, 100% { transform: scale(1); opacity: 0.85; }
           50% { transform: scale(1.12); opacity: 1; }
         }
+        @keyframes hs-card-enter {
+          from { transform: scale(0.94); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
       `}</style>
       <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/70 border-b border-border/50">
@@ -670,23 +679,48 @@ const Discovery = () => {
         </div>
       </header>
 
-      <main className="max-w-md mx-auto px-4 py-6 space-y-5">
+      <main className="max-w-md mx-auto px-4 py-6">
         {profiles.length === 0 ? (
           <Card className="p-6 text-center text-sm text-muted-foreground">
             Nessun nuovo profilo per ora. Torna più tardi.
           </Card>
-        ) : (
-          profiles.map((p) => (
-            <ProfileCardView
+        ) : (() => {
+          const safeIndex = ((currentIndex % profiles.length) + profiles.length) % profiles.length;
+          const p = profiles[safeIndex];
+          const tx = exit ? exit.dx : drag.dx;
+          const ty = exit ? exit.dy : drag.dy;
+          const rot = tx / 20;
+          const opacity = exit ? 0 : Math.max(0.4, 1 - Math.hypot(drag.dx, drag.dy) / 600);
+          const transition = isDragging
+            ? 'none'
+            : exit
+              ? `transform ${EXIT_DURATION_MS}ms cubic-bezier(0.22,1,0.36,1), opacity ${EXIT_DURATION_MS}ms ease-out`
+              : 'transform 220ms cubic-bezier(0.22,1,0.36,1), opacity 220ms ease-out';
+          return (
+            <div
               key={p.id}
-              profile={p}
-              ref={setCardRef(p.id)}
-              isActive={activeProfileId === p.id}
-              isPulsing={pulseProfileId === p.id}
-              onOpenDetail={() => openDetail(p)}
-            />
-          ))
-        )}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerEnd}
+              onPointerCancel={handlePointerEnd}
+              style={{
+                touchAction: 'none',
+                transform: `translate3d(${tx}px, ${ty}px, 0) rotate(${rot}deg)`,
+                opacity,
+                transition,
+                willChange: 'transform, opacity',
+                animation: !isDragging && !exit ? 'hs-card-enter 320ms ease-out' : undefined,
+              }}
+            >
+              <ProfileCardView
+                profile={p}
+                isActive={activeProfileId === p.id}
+                isPulsing={pulseProfileId === p.id}
+                onOpenDetail={() => openDetail(p)}
+              />
+            </div>
+          );
+        })()}
       </main>
 
       <ProfileDetailSheet
