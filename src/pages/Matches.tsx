@@ -601,7 +601,7 @@ const Matches = () => {
                               size="sm"
                               disabled={isResponding}
                               onClick={() => handleAcceptInvite(inv.id)}
-                              className="flex-1 h-10 rounded-sm uppercase tracking-wider text-[11px] font-medium hover:opacity-90"
+                              className="flex-1 h-10 uppercase tracking-wider text-[11px] font-medium hover:opacity-90"
                               style={{ background: '#d4a574', color: '#0d0d0d' }}
                             >
                               {isResponding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" strokeWidth={2} />}
@@ -612,7 +612,7 @@ const Matches = () => {
                               variant="outline"
                               disabled={isResponding}
                               onClick={() => handleDeclineInvite(inv.id)}
-                              className="flex-1 h-10 rounded-sm uppercase tracking-wider text-[11px] font-medium bg-transparent hover:bg-transparent"
+                              className="flex-1 h-10 uppercase tracking-wider text-[11px] font-medium bg-transparent hover:bg-transparent"
                               style={{ border: '1px solid #d4a574', color: '#d4a574' }}
                             >
                               <X className="h-3.5 w-3.5" strokeWidth={2} />
@@ -632,7 +632,7 @@ const Matches = () => {
 
       <Dialog open={!!inviteDialogMatch} onOpenChange={(o) => !o && setInviteDialogMatch(null)}>
         <DialogContent
-          className="rounded-sm sm:max-w-md"
+          className="rounded-2xl sm:max-w-md"
           style={{ background: '#111', border: '1px solid #2a2a2a', color: '#f0ece4' }}
         >
           <DialogHeader>
@@ -655,7 +655,7 @@ const Matches = () => {
                       key={value}
                       type="button"
                       onClick={() => setInviteType(value)}
-                      className="shrink-0 inline-flex items-center gap-1.5 rounded-sm border px-3 py-2 text-xs uppercase tracking-wider transition-colors"
+                      className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs uppercase tracking-wider transition-colors"
                       style={{
                         background: selected ? '#d4a574' : '#1a1a1a',
                         color: selected ? '#0d0d0d' : '#7a7570',
@@ -681,7 +681,7 @@ const Matches = () => {
                 onChange={(e) => setInviteLocation(e.target.value)}
                 placeholder="Es. Caffè San Marco, Napoli"
                 maxLength={120}
-                className="rounded-sm"
+                className=""
                 style={{ background: '#1a1a1a', borderColor: '#2a2a2a', color: '#f0ece4' }}
               />
             </div>
@@ -698,7 +698,7 @@ const Matches = () => {
                   value={inviteDate}
                   min={new Date().toISOString().split('T')[0]}
                   onChange={(e) => setInviteDate(e.target.value)}
-                  className="rounded-sm"
+                  className=""
                   style={{ background: '#1a1a1a', borderColor: '#2a2a2a', color: '#f0ece4' }}
                 />
               </div>
@@ -711,7 +711,7 @@ const Matches = () => {
                   type="time"
                   value={inviteTime}
                   onChange={(e) => setInviteTime(e.target.value)}
-                  className="rounded-sm"
+                  className=""
                   style={{ background: '#1a1a1a', borderColor: '#2a2a2a', color: '#f0ece4' }}
                 />
               </div>
@@ -729,7 +729,7 @@ const Matches = () => {
                 placeholder="Un messaggio per accompagnare l'invito…"
                 maxLength={150}
                 rows={3}
-                className="rounded-sm resize-none"
+                className="resize-none"
                 style={{ background: '#1a1a1a', borderColor: '#2a2a2a', color: '#f0ece4' }}
               />
               <div className="text-right text-[10px]" style={{ color: '#7a7570' }}>
@@ -743,7 +743,7 @@ const Matches = () => {
                 type="button"
                 variant="ghost"
                 onClick={() => setInviteDialogMatch(null)}
-                className="flex-1 h-10 rounded-sm uppercase tracking-wider text-[11px]"
+                className="flex-1 h-10 uppercase tracking-wider text-[11px]"
                 style={{ color: '#7a7570' }}
               >
                 Annulla
@@ -752,7 +752,7 @@ const Matches = () => {
                 type="button"
                 onClick={handleSubmitInvite}
                 disabled={invitingId === inviteDialogMatch?.id}
-                className="flex-1 h-10 rounded-sm uppercase tracking-wider text-[11px] font-medium hover:opacity-90"
+                className="flex-1 h-10 uppercase tracking-wider text-[11px] font-medium hover:opacity-90"
                 style={{ background: '#d4a574', color: '#0d0d0d' }}
               >
                 {invitingId === inviteDialogMatch?.id ? (
