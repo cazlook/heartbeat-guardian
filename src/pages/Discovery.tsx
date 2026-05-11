@@ -625,6 +625,10 @@ const Discovery = () => {
           0%, 100% { transform: scale(1); opacity: 0.85; }
           50% { transform: scale(1.12); opacity: 1; }
         }
+        @keyframes hs-card-enter {
+          from { transform: scale(0.94); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
       `}</style>
       <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/70 border-b border-border/50">
