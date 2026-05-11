@@ -372,7 +372,7 @@ const Matches = () => {
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
         ) : matches.length === 0 ? (
-          <div className="border border-border/60 rounded-sm py-16 px-8 text-center space-y-3">
+          <div className="border border-border/60 rounded-2xl py-16 px-8 text-center space-y-3">
             <p className="font-display text-2xl text-foreground italic leading-tight">
               Il tuo cuore non ha ancora reagito.
             </p>
@@ -384,7 +384,7 @@ const Matches = () => {
                 asChild
                 variant="outline"
                 size="sm"
-                className="rounded-sm uppercase tracking-wider text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+                className="uppercase tracking-wider text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
               >
                 <Link to="/discovery">Vai a Discovery</Link>
               </Button>
@@ -402,7 +402,7 @@ const Matches = () => {
 
               return (
                 <li key={m.id}>
-                  <Card className="relative rounded-sm p-4 bg-card border border-border/60 hover:border-primary/40 transition-colors space-y-4">
+                  <Card className="relative rounded-2xl p-4 bg-card border border-border/60 hover:border-primary/40 transition-colors space-y-4">
                     {isNew && (
                       <span
                         className="absolute font-mono-bpm uppercase"
@@ -414,7 +414,7 @@ const Matches = () => {
                           fontSize: '10px',
                           letterSpacing: '0.08em',
                           padding: '2px 6px',
-                          borderRadius: '2px',
+                          borderRadius: '9999px',
                         }}
                       >
                         NUOVO
@@ -428,7 +428,7 @@ const Matches = () => {
                         onClick={() => m.other?.id && navigate(`/profile/${m.other.id}`)}
                         disabled={!m.other?.id}
                         aria-label={`Apri profilo di ${name}`}
-                        className="h-16 w-16 rounded-sm overflow-hidden bg-muted shrink-0 hover:opacity-85 transition-opacity disabled:cursor-default"
+                        className="h-16 w-16 rounded-xl overflow-hidden bg-muted shrink-0 hover:opacity-85 transition-opacity disabled:cursor-default"
                       >
                         {photo ? (
                           <img
@@ -483,7 +483,7 @@ const Matches = () => {
                       <Button
                         size="sm"
                         onClick={() => navigate(`/chat/${m.id}`)}
-                        className="flex-1 h-10 rounded-sm bg-primary text-primary-foreground hover:bg-primary/90 uppercase tracking-wider text-[11px] font-medium"
+                        className="flex-1 h-10 bg-primary text-primary-foreground hover:bg-primary/90 uppercase tracking-wider text-[11px] font-medium"
                       >
                         <MessageSquare className="h-3.5 w-3.5" strokeWidth={1.75} />
                         Chatta
@@ -493,7 +493,7 @@ const Matches = () => {
                         variant="outline"
                         disabled={invitingId === m.id || sentInvites.has(m.id)}
                         onClick={() => handleInvite(m)}
-                        className="flex-1 h-10 rounded-sm border-border/70 hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary uppercase tracking-wider text-[11px] font-medium text-foreground/85 disabled:opacity-100"
+                        className="flex-1 h-10 border-border/70 hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary uppercase tracking-wider text-[11px] font-medium text-foreground/85 disabled:opacity-100"
                       >
                         {invitingId === m.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -519,7 +519,7 @@ const Matches = () => {
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
             ) : receivedInvites.length === 0 ? (
-              <div className="border border-border/60 rounded-sm py-16 px-8 text-center space-y-2">
+              <div className="border border-border/60 rounded-2xl py-16 px-8 text-center space-y-2">
                 <p className="font-display text-2xl italic leading-tight" style={{ color: '#f0ece4' }}>
                   Nessun invito ricevuto.
                 </p>
@@ -549,11 +549,11 @@ const Matches = () => {
                       style={{ opacity: isFading ? 0 : 1 }}
                     >
                       <div
-                        className="rounded-sm p-4 space-y-3"
+                        className="rounded-2xl p-4 space-y-3"
                         style={{ background: '#111', border: '1px solid #2a2a2a' }}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="h-12 w-12 rounded-sm overflow-hidden bg-muted shrink-0">
+                          <div className="h-12 w-12 rounded-xl overflow-hidden bg-muted shrink-0">
                             {senderPhoto ? (
                               <img src={senderPhoto} alt={senderName} className="h-full w-full object-cover photo-color" />
                             ) : (
