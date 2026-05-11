@@ -158,6 +158,7 @@ const Discovery = () => {
   const revealedPairRef = useRef<Set<string>>(new Set());
   const handleSampleRef = useRef<((s: LiveHrSample) => void) | null>(null);
   const profilesRef = useRef<ProfileCard[]>([]);
+  const hasSwipedRef = useRef(false);
   useEffect(() => { profilesRef.current = profiles; }, [profiles]);
 
   // ── Load profiles & bootstrap session ──────────────────────────────
@@ -449,12 +450,16 @@ const Discovery = () => {
     pointerIdRef.current = e.pointerId;
     (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
     dragStartRef.current = { x: e.clientX, y: e.clientY, t: performance.now() };
+    hasSwipedRef.current = false;
     setIsDragging(true);
   }, [exit]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (!dragStartRef.current || pointerIdRef.current !== e.pointerId) return;
-    setDrag({ dx: e.clientX - dragStartRef.current.x, dy: e.clientY - dragStartRef.current.y });
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+    if (Math.hypot(dx, dy) > 8) hasSwipedRef.current = true;
+    setDrag({ dx, dy });
   }, []);
 
   const handlePointerEnd = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -468,8 +473,13 @@ const Discovery = () => {
     pointerIdRef.current = null;
     setIsDragging(false);
     if (dist >= SWIPE_THRESHOLD_PX || velocity >= SWIPE_VELOCITY) {
+      e.preventDefault();
+      e.stopPropagation();
+      hasSwipedRef.current = true;
       commitSwipe(dx, dy);
+      window.setTimeout(() => { hasSwipedRef.current = false; }, 0);
     } else {
+      hasSwipedRef.current = false;
       setDrag({ dx: 0, dy: 0 });
     }
   }, [commitSwipe]);
@@ -716,7 +726,10 @@ const Discovery = () => {
                 profile={p}
                 isActive={activeProfileId === p.id}
                 isPulsing={pulseProfileId === p.id}
-                onOpenDetail={() => openDetail(p)}
+                onOpenDetail={() => {
+                  if (hasSwipedRef.current) return;
+                  openDetail(p);
+                }}
               />
             </div>
           );
