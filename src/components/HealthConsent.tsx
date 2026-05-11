@@ -50,7 +50,7 @@ export const HealthConsent = ({ onReady }: Props) => {
       `}</style>
 
       <div className="relative w-full max-w-md">
-        <div className="rounded-sm border border-border/60 bg-card/80 backdrop-blur-xl p-10 space-y-8">
+        <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-xl p-10 space-y-8">
           {/* Header */}
           <div className="flex flex-col items-center text-center gap-5">
             <div
@@ -106,7 +106,7 @@ export const HealthConsent = ({ onReady }: Props) => {
 
           {/* Native required */}
           {!native && (
-            <div className="flex gap-3 p-4 border border-border bg-muted/40 text-sm">
+            <div className="flex gap-3 p-4 border border-border bg-muted/40 text-sm rounded-2xl">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" strokeWidth={1.5} />
               <p className="text-muted-foreground leading-relaxed">
                 Build nativa richiesta. In anteprima web i dati non sono disponibili: esporta su GitHub e usa{' '}
@@ -117,7 +117,7 @@ export const HealthConsent = ({ onReady }: Props) => {
 
           {/* Success */}
           {isDone && result?.data && (
-            <div className="border border-primary/30 bg-primary/[0.04] p-5">
+            <div className="border border-primary/30 bg-primary/[0.04] p-5 rounded-2xl">
               <div className="flex items-start gap-4">
                 <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-1" strokeWidth={1.5} />
                 <div className="flex-1 space-y-2">
@@ -142,7 +142,7 @@ export const HealthConsent = ({ onReady }: Props) => {
 
           {/* Error */}
           {result && result.status !== 'granted' && (
-            <div className="flex gap-3 p-4 border border-destructive/40 bg-destructive/[0.06] text-sm">
+            <div className="flex gap-3 p-4 border border-destructive/40 bg-destructive/[0.06] text-sm rounded-2xl">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-destructive" strokeWidth={1.5} />
               <p className="text-foreground/85 leading-relaxed">{result.error ?? 'Permesso negato'}</p>
             </div>
@@ -152,7 +152,7 @@ export const HealthConsent = ({ onReady }: Props) => {
           <Button
             onClick={handleConnect}
             disabled={loading || !native}
-            className="w-full h-12 rounded-sm bg-primary text-primary-foreground hover:bg-primary/90 font-medium tracking-wide uppercase text-xs disabled:opacity-30 transition-all"
+            className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 font-medium tracking-wide uppercase text-xs disabled:opacity-30 transition-all"
           >
             {loading ? (
               <span className="flex items-center gap-2">

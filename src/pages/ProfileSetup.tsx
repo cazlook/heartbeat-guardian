@@ -143,7 +143,7 @@ const ProfileSetup = () => {
             <Label>Foto</Label>
             <div className="grid grid-cols-3 gap-2">
               {photos.map((url) => (
-                <div key={url} className="relative aspect-square rounded-md overflow-hidden bg-muted group">
+                <div key={url} className="relative aspect-square rounded-xl overflow-hidden bg-muted group">
                   <img src={url} alt="Foto profilo" className="w-full h-full object-cover" />
                   <button
                     type="button"
@@ -159,7 +159,7 @@ const ProfileSetup = () => {
                 type="button"
                 onClick={onPickFile}
                 disabled={uploading}
-                className="aspect-square rounded-md border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary hover:text-primary transition disabled:opacity-50"
+                className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary hover:text-primary transition disabled:opacity-50"
               >
                 {uploading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
