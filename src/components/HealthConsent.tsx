@@ -68,8 +68,7 @@ export const HealthConsent = ({ onReady }: Props) => {
                 HeartSync · Calibrazione
               </p>
               <h1 className="font-display text-4xl text-foreground leading-[1.05]">
-                Il tuo cuore,<br />
-                <em className="text-primary not-italic font-display">la tua firma.</em>
+                Il cuore sa prima della mente.
               </h1>
               <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
                 Leggiamo la tua baseline cardiaca dagli ultimi 7 giorni —
