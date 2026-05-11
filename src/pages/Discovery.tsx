@@ -847,7 +847,7 @@ const Discovery = () => {
             <Bug className="h-4 w-4" />
           </button>
           {debugOpen && (
-            <div className="fixed bottom-20 right-4 z-40 w-[320px] max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-card text-card-foreground shadow-xl p-4 space-y-3">
+            <div className="fixed bottom-20 right-4 z-40 w-[320px] max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-card text-card-foreground shadow-xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Debug — fake BPM
@@ -906,7 +906,7 @@ const Discovery = () => {
 
               <div>
                 <div className="text-xs text-muted-foreground mb-1.5">Last 10 events</div>
-                <div className="max-h-48 overflow-y-auto rounded border border-border bg-muted/30 text-[11px] font-mono">
+                <div className="max-h-48 overflow-y-auto rounded-xl border border-border bg-muted/30 text-[11px] font-mono">
                   {debugLog.length === 0 ? (
                     <div className="p-2 text-muted-foreground">Nessun evento</div>
                   ) : (
@@ -951,7 +951,7 @@ const ProfileCardView = forwardRef<HTMLDivElement, ProfileCardViewProps>(({
   return (
     <div ref={ref} data-profile-id={profile.id}>
       <Card
-        className={`group relative overflow-hidden cursor-pointer rounded-sm border bg-card transition-colors duration-300 ${
+        className={`group relative overflow-hidden cursor-pointer rounded-3xl border bg-card transition-colors duration-300 ${
           isActive ? 'border-primary/40' : 'border-border/60 hover:border-border'
         }`}
         onClick={onOpenDetail}
@@ -981,7 +981,7 @@ const ProfileCardView = forwardRef<HTMLDivElement, ProfileCardViewProps>(({
           )}
 
           {profile.distance_km != null && (
-            <div className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-sm bg-background/70 backdrop-blur-md text-[10px] font-medium border border-border/40 uppercase tracking-wider text-foreground/80">
+            <div className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-background/70 backdrop-blur-md text-[10px] font-medium border border-border/40 uppercase tracking-wider text-foreground/80">
               <MapPin className="h-3 w-3" strokeWidth={1.5} />
               <span className="font-mono-bpm">{profile.distance_km}km</span>
             </div>
@@ -1019,7 +1019,7 @@ const ProfileCardView = forwardRef<HTMLDivElement, ProfileCardViewProps>(({
                   <Badge
                     key={tag}
                     variant="secondary"
-                    className="rounded-sm text-[10px] px-2 py-0.5 bg-background/40 backdrop-blur border border-border/40 font-normal uppercase tracking-wider text-foreground/75"
+                    className="rounded-full text-[10px] px-2 py-0.5 bg-background/40 backdrop-blur border border-border/40 font-normal uppercase tracking-wider text-foreground/75"
                   >
                     {tag}
                   </Badge>

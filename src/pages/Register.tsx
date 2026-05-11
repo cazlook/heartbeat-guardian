@@ -102,7 +102,7 @@ const Register = () => {
               onChange={(e) => setEmail(e.target.value)}
               onFocus={handleFocus}
               onBlur={handleBlur}
-              className="h-12 rounded-none bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
+              className="h-12 rounded-xl bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
               style={{ color: '#f0ece4', ...noirBorder }}
             />
           </div>
@@ -121,7 +121,7 @@ const Register = () => {
               onChange={(e) => setPassword(e.target.value)}
               onFocus={handleFocus}
               onBlur={handleBlur}
-              className="h-12 rounded-none bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
+              className="h-12 rounded-xl bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
               style={{ color: '#f0ece4', ...noirBorder }}
             />
           </div>
@@ -137,7 +137,7 @@ const Register = () => {
               onChange={(e) => setName(e.target.value)}
               onFocus={handleFocus}
               onBlur={handleBlur}
-              className="h-12 rounded-none bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
+              className="h-12 rounded-xl bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
               style={{ color: '#f0ece4', ...noirBorder }}
             />
           </div>
@@ -156,7 +156,7 @@ const Register = () => {
               onChange={(e) => setAge(e.target.value)}
               onFocus={handleFocus}
               onBlur={handleBlur}
-              className="h-12 rounded-none bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
+              className="h-12 rounded-xl bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
               style={{ color: '#f0ece4', ...noirBorder }}
             />
           </div>
@@ -168,13 +168,13 @@ const Register = () => {
               </Label>
               <Select value={gender} onValueChange={setGender}>
                 <SelectTrigger
-                  className="h-12 rounded-none bg-transparent text-[14px] focus:ring-0 focus:ring-offset-0"
+                  className="h-12 rounded-xl bg-transparent text-[14px] focus:ring-0 focus:ring-offset-0"
                   style={{ color: '#f0ece4', ...noirBorder }}
                 >
                   <SelectValue placeholder="Seleziona" />
                 </SelectTrigger>
                 <SelectContent
-                  className="rounded-none"
+                  className="rounded-xl"
                   style={{ backgroundColor: '#1a1a1a', color: '#f0ece4', ...noirBorder }}
                 >
                   <SelectItem value="female">Donna</SelectItem>
@@ -190,13 +190,13 @@ const Register = () => {
               </Label>
               <Select value={lookingFor} onValueChange={setLookingFor}>
                 <SelectTrigger
-                  className="h-12 rounded-none bg-transparent text-[14px] focus:ring-0 focus:ring-offset-0"
+                  className="h-12 rounded-xl bg-transparent text-[14px] focus:ring-0 focus:ring-offset-0"
                   style={{ color: '#f0ece4', ...noirBorder }}
                 >
                   <SelectValue placeholder="Seleziona" />
                 </SelectTrigger>
                 <SelectContent
-                  className="rounded-none"
+                  className="rounded-xl"
                   style={{ backgroundColor: '#1a1a1a', color: '#f0ece4', ...noirBorder }}
                 >
                   <SelectItem value="female">Donne</SelectItem>
@@ -210,7 +210,7 @@ const Register = () => {
           <Button
             type="submit"
             disabled={submitting}
-            className="w-full h-12 rounded-none uppercase tracking-[0.25em] text-xs font-medium hover:brightness-110 transition-all mt-2"
+            className="w-full h-12 uppercase tracking-[0.25em] text-xs font-medium hover:brightness-110 transition-all mt-2"
             style={{ backgroundColor: '#d4a574', color: '#0d0d0d' }}
           >
             {submitting ? 'Creazione…' : 'Registrati'}

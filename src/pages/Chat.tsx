@@ -635,7 +635,7 @@ const Chat = () => {
 
       {/* Invite sheet */}
       <Sheet open={inviteOpen} onOpenChange={setInviteOpen}>
-        <SheetContent side="bottom" className="bg-card border-border/40">
+        <SheetContent side="bottom" className="bg-card border-border/40 rounded-t-3xl">
           <SheetHeader className="text-left">
             <SheetTitle className="font-display text-2xl text-foreground">
               Invita a uscire

@@ -69,7 +69,7 @@ const Login = () => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-12 rounded-none bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
+              className="h-12 rounded-xl bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
               style={{
                 color: '#f0ece4',
                 border: '1px solid #2a2a2a',
@@ -95,7 +95,7 @@ const Login = () => {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-12 rounded-none bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
+              className="h-12 rounded-xl bg-transparent text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
               style={{
                 color: '#f0ece4',
                 border: '1px solid #2a2a2a',

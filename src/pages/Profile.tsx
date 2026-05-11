@@ -80,12 +80,12 @@ const Profile = () => {
           <div className="relative">
             <div className="flex overflow-x-auto snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
               {profile.photos.length === 0 ? (
-                <div className="aspect-[3/4] w-full shrink-0 bg-muted flex items-center justify-center text-muted-foreground">
+                <div className="aspect-[3/4] w-full shrink-0 bg-muted flex items-center justify-center text-muted-foreground rounded-xl">
                   Nessuna foto
                 </div>
               ) : (
                 profile.photos.map((src, i) => (
-                  <div key={`${src}-${i}`} className="aspect-[3/4] w-full shrink-0 snap-center relative">
+                  <div key={`${src}-${i}`} className="aspect-[3/4] w-full shrink-0 snap-center relative rounded-xl">
                     <img src={src} alt={`${profile.name ?? 'Profilo'} ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
                     {profile.photos.length > 1 && (
                       <div className="absolute top-3 inset-x-0 flex justify-center gap-1.5 px-4">

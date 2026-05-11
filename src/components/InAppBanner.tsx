@@ -73,7 +73,7 @@ export const InAppBanner = ({ banner, onDismiss }: Props) => {
         zIndex: 100,
         background: '#1a1a1a',
         border: '1px solid #d4a574',
-        borderRadius: 12,
+        borderRadius: 16,
         color: '#f0ece4',
         padding: '12px 14px',
         display: 'flex',

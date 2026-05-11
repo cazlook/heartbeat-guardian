@@ -256,7 +256,7 @@ export const EditOwnProfileSheet = ({ open, onOpenChange, onSaved }: Props) => {
                 <Button type="button" variant="ghost" className="flex-1" onClick={() => onOpenChange(false)} disabled={saving}>
                   Annulla
                 </Button>
-                <Button type="submit" className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 rounded-sm uppercase tracking-wide text-xs" disabled={saving}>
+                <Button type="submit" className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 uppercase tracking-wide text-xs" disabled={saving}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Salva'}
                 </Button>
               </div>
