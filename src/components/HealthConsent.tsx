@@ -71,8 +71,7 @@ export const HealthConsent = ({ onReady }: Props) => {
                 Il cuore sa prima della mente.
               </h1>
               <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
-                Leggiamo la tua baseline cardiaca dagli ultimi 7 giorni —
-                via HealthKit o Health Connect.
+                
               </p>
             </div>
           </div>
