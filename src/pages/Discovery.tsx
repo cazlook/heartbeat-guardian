@@ -643,7 +643,7 @@ const Discovery = () => {
       <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/70 border-b border-border/50">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="font-display text-2xl tracking-tight flex items-center gap-2 text-foreground">
+          <h1 className="font-display text-2xl tracking-tight flex items-center gap-2 text-foreground hs-fade-in">
             <Heart className="h-4 w-4 fill-current text-primary" strokeWidth={1.5} />
             <span>HeartSync</span>
           </h1>
