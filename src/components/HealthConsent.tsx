@@ -103,6 +103,29 @@ export const HealthConsent = ({ onReady }: Props) => {
             </div>
           </div>
 
+          {/* Step-by-step guida smartwatch */}
+          <div className="rounded-2xl border border-border/50 bg-background/40 p-5 space-y-3">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+              Come collegare il tuo smartwatch
+            </p>
+            <ol className="space-y-2.5 text-sm text-foreground/85">
+              {[
+                'Indossa l\'orologio almeno 3 giorni con il rilevamento HR attivo.',
+                'Apri Salute (iOS) o Health Connect (Android) e accetta la sincronizzazione.',
+                'Tocca "Connetti smartwatch" qui sotto e autorizza la lettura della frequenza a riposo.',
+              ].map((s, i) => (
+                <li key={i} className="flex gap-3 leading-relaxed">
+                  <span
+                    className="shrink-0 h-5 w-5 rounded-full border border-primary/40 text-primary text-[11px] font-mono-bpm flex items-center justify-center mt-0.5"
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="text-muted-foreground">{s}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
           {/* Native required */}
           {!native && (
             <div className="flex gap-3 p-4 border border-border bg-muted/40 text-sm rounded-2xl">

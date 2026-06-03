@@ -69,19 +69,19 @@ const Register = () => {
         {/* Header */}
         <div className="text-center space-y-4 mb-10">
           <p
-            className="text-[10px] uppercase tracking-[0.4em]"
+            className="text-[10px] uppercase tracking-[0.4em] hs-fade-in"
             style={{ color: '#7a7570' }}
           >
             HeartSync
           </p>
           <h1
-            className="font-display text-5xl leading-[1.05]"
+            className="font-display text-5xl leading-[1.05] hs-fade-in-delay-1"
             style={{ color: '#f0ece4' }}
           >
             Inizia.
           </h1>
           <p
-            className="font-display italic text-base"
+            className="font-display italic text-base hs-fade-in-delay-2"
             style={{ color: '#d4a574' }}
           >
             Il tuo cuore lo ha scelto prima di te.

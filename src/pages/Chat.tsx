@@ -376,7 +376,25 @@ const Chat = () => {
 
   const showMeetSuggestion = messages.length >= 5;
 
-  const handleSendInvite = () => {
+  const handleSendInvite = async () => {
+    if (!user || !matchId || !other?.id) return;
+    const typeMap: Record<string, string> = {
+      'Caffè': 'caffe', 'Aperitivo': 'aperitivo', 'Cena': 'cena', 'Passeggiata': 'passeggiata',
+    };
+    const { error } = await supabase.from('date_invites').insert({
+      match_id: matchId,
+      from_user_id: user.id,
+      to_user_id: other.id,
+      invite_type: typeMap[inviteType] ?? 'altro',
+      day: inviteDay,
+      slot: inviteSlot,
+      area: inviteArea.trim() || null,
+      location: inviteArea.trim() || null,
+    });
+    if (error) {
+      toast({ title: "Errore nell'invio dell'invito", description: error.message, variant: 'destructive' });
+      return;
+    }
     setInviteOpen(false);
     toast({
       title: 'Invito inviato',
