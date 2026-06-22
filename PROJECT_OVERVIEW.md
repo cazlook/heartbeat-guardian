@@ -105,7 +105,26 @@ in TypeScript puro, **testata con Vitest**.
 `REJECTED_LEARNING_PHASE`, `REJECTED_LOW_Z_SCORE`, `REJECTED_NOISE`,
 `REJECTED_BPM_TOO_HIGH`, `REJECTED_RATE_OF_CHANGE`, `REJECTED_NOT_SUSTAINED`,
 `REJECTED_CONTEXT_INVALID`, `REJECTED_BASELINE_UNSTABLE`,
-`REJECTED_NO_ACCEL_LOW_CONFIDENCE`.
+`REJECTED_NO_ACCEL_LOW_CONFIDENCE`, `REJECTED_STRESS_PATTERN`.
+
+### v3.1 — Resonance (HRV) + precisione temporale
+
+- **HRV resonance discriminator** (`SignalProcessor.ts`): oltre alla frequenza
+  cardiaca, l'engine legge la variabilità (HRV, ms) da HealthKit/Health Connect.
+  Costruisce una baseline HRV personale (Welford) e, quando una reazione supera
+  le soglie HR, classifica l'arousal:
+  - `resonant` — HR elevata con calo HRV moderato vs baseline → reazione genuina,
+    `resonance` score 0–1 in `ReadingLog`.
+  - `stress` — crollo HRV estremo (≥55%) → stress/sforzo acuto → `REJECTED_STRESS_PATTERN`.
+  Onestà tecnica: l'HRV è usata come **corroborazione + guardia anti-stress**,
+  non come prova clinica di "attrazione". Se l'HRV non è disponibile, il
+  comportamento è identico all'engine HR-only (retrocompatibile).
+- **Correlazione temporale** (`viewTracker.ts`): i sample dello smartwatch
+  arrivano con ritardo (polling). Il `ViewTracker` registra le finestre di
+  visualizzazione per profilo e attribuisce ogni sample al profilo che era
+  davvero a schermo al `sampleTime`, scartando i sample ambigui a cavallo di
+  due profili (guard band). Evita di attribuire una reazione alla persona
+  sbagliata.
 
 ---
 
@@ -184,17 +203,28 @@ Standard email/password Supabase Auth, con `ProtectedRoute` lato client.
 
 ---
 
-## 9. Cose **non ancora** fatte / possibili evoluzioni
+## 9. Stato avanzamento
 
-- ⏳ Tabella `date_invites` per persistere realmente gli inviti a uscire
-  (ora il bottone mostra solo un toast).
-- ⏳ Indicatore "sta scrivendo…" in chat (Supabase Realtime broadcast).
-- ⏳ Read receipts (spunte ambra) sui messaggi.
-- ⏳ Badge "Nuovo" ambra sulle card match recenti (< 24h).
-- ⏳ Restyling noir di `ProfileSetup.tsx` (rimasto fuori dall'ultimo giro).
-- ⏳ Micro-animazione fade-in su titolo/tagline al mount.
-- ⏳ Pubblicazione su App Store / Play Store (build Capacitor).
-- ⏳ Onboarding guidato sull'utilizzo dello smartwatch.
+- ✅ Tabella `date_invites` con inviti persistiti, tab "Inviti" in Matches,
+  accetta/rifiuta, timeline inviti in chat con Realtime.
+- ✅ Indicatore "sta scrivendo…" in chat (Supabase Realtime broadcast).
+- ✅ Read receipts (spunte ambra) sui messaggi.
+- ✅ Badge "Nuovo" ambra sulle card match recenti (< 24h).
+- ✅ Restyling noir di `ProfileSetup.tsx` + fade-in su titolo/tagline.
+- ✅ Onboarding consenso dati biometrici (`HealthConsent.tsx`).
+- ✅ Capacitor configurato per build bundle locale (vedi README per le
+  istruzioni di build iOS/Android).
+- ✅ Pagina `/privacy` (informativa pubblica, inclusi dati cardiaci) linkata
+  da Register e da "Modifica profilo".
+- ✅ Cancellazione account: edge function `delete-account` (dati + storage +
+  auth user) con conferma in EditOwnProfileSheet.
+- ✅ Fallback senza smartwatch: bottone "Mi interessa" (reazione `source =
+  'manual'`), banner "Nessun battito rilevato" su nativo dopo 30s senza
+  sample; `check-match` accetta match ibridi (lato manuale = z floor 1.5).
+- ✅ Validazione server-side delle reazioni: trigger Postgres con sanity
+  check su z_score/BPM, cooldown 20s per coppia, rate-limit 30 reazioni/ora.
+- ⏳ Pubblicazione effettiva su App Store / Play Store (firma, store listing,
+  contatto del titolare nella privacy policy).
 
 ---
 

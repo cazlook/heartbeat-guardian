@@ -26,6 +26,7 @@ import { toast } from '@/hooks/use-toast';
 import {
   createSession,
   processReading,
+  ViewTracker,
   DEFAULT_CONFIG,
   type EngineConfig,
   type ReadingLog,
@@ -148,6 +149,8 @@ const Discovery = () => {
   const sessionOwnerRef = useRef<string | null>(null);
   // Native HR is now sourced via useBiometricSource (Health Connect / HealthKit).
   const activeProfileRef = useRef<string | null>(null);
+  // Maps delayed watch samples back to the profile on screen at sample time.
+  const viewTrackerRef = useRef(new ViewTracker());
   const reactionWindowRef = useRef<{
     profileId: string;
     startedAt: number;
@@ -316,13 +319,19 @@ const Discovery = () => {
   // ── Sample handler — shared by poller and debug panel ──────────────
   const handleSample = useCallback((sample: LiveHrSample) => {
     const session = sessionRef.current;
-    const targetProfile = activeProfileRef.current;
+    // Mock/debug samples are synchronous → attribute to the live profile.
+    // Real watch samples are delayed → attribute to whoever was on screen at
+    // sample.sampleTime (null = ambiguous/boundary → drop).
+    const targetProfile = sample.source === 'mock'
+      ? activeProfileRef.current
+      : viewTrackerRef.current.attribute(sample.sampleTime);
     if (!session || !targetProfile) return;
 
     const reading = processReading(sample.bpm, session, {
       app_in_foreground: true,
       in_discovery_screen: true,
       signal_quality: 0.9,
+      hrv_ms: sample.hrvMs, // enables the resonance / stress discriminator
       // accelerometer omitted → engine applies stricter no-accel rules
     }, ENGINE_CONFIG);
 
@@ -370,11 +379,68 @@ const Discovery = () => {
   // ── Native biometric source (Health Connect / HealthKit) ───────────
   // Routes real BPM samples into the same pipeline used by the mock simulator.
   // On web/preview the hook is a no-op and the mock simulator below takes over.
-  useBiometricSource({
+  const { isNative, lastSample } = useBiometricSource({
     intervalMs: 2000,
     enabled: !!userId,
     onSample: (s: LiveHrSample) => handleSampleRef.current?.(s),
   });
+
+  // ── Fallback senza smartwatch ───────────────────────────────────────
+  // Su nativo, se non arriva nessun sample per 30s (watch assente, permessi
+  // negati, segnale scadente) mostriamo il banner e l'interesse manuale
+  // diventa l'unico canale. Il bottone manuale è comunque sempre disponibile.
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 5000);
+    return () => window.clearInterval(id);
+  }, []);
+  const noSignal =
+    isNative && (lastSample == null || nowTick - lastSample.receivedAt > 30_000);
+
+  const [manualSent, setManualSent] = useState<Set<string>>(new Set());
+  const [sendingManual, setSendingManual] = useState(false);
+
+  const sendManualInterest = useCallback(async (profileId: string) => {
+    if (!user || isMockProfileId(profileId) || manualSent.has(profileId)) return;
+    setSendingManual(true);
+    const { error } = await supabase.from('biometric_reactions').insert({
+      viewer_id: user.id,
+      profile_id: profileId,
+      source: 'manual',
+      z_score: null,
+      peak_bpm: null,
+      baseline_mean: null,
+      baseline_std: null,
+      intensity: 'low',
+      confidence: 0,
+      duration_ms: 0,
+    });
+    setSendingManual(false);
+    if (error) {
+      toast({ title: 'Invio non riuscito', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setManualSent((prev) => new Set(prev).add(profileId));
+
+    // Stesso flusso di match delle reazioni cardiache.
+    if (revealedPairRef.current.has(profileId)) return;
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke('check-match', {
+        body: { viewer_id: user.id, profile_id: profileId },
+      });
+      if (fnErr || !data?.matched || !data.match_id) return;
+      revealedPairRef.current.add(profileId);
+      const match = profilesRef.current.find((p) => p.id === profileId) ?? null;
+      setReveal({
+        matchId: data.match_id,
+        cardiacScore: Number(data.cardiac_score ?? 0),
+        photo: match?.photos?.[0] ?? null,
+        name: match?.name ?? null,
+      });
+    } catch (e) {
+      console.warn('[Discovery] check-match exception', e);
+    }
+  }, [user, manualSent]);
 
   // ── Mock BPM simulator ─────────────────────────────────────────────
   // Per ogni profilo mock simula un BPM "del viewer" che fluttua attorno a
@@ -422,6 +488,7 @@ const Discovery = () => {
       activeProfileRef.current = id;
       setActiveProfileId(id);
       reactionWindowRef.current = null;
+      viewTrackerRef.current.enter(id, Date.now());
       console.log('[Discovery] swipe → active profile', id);
     }
   }, [currentIndex, profiles]);
@@ -690,6 +757,17 @@ const Discovery = () => {
       </header>
 
       <main className="max-w-md mx-auto px-4 py-6">
+        {noSignal && (
+          <div
+            className="mb-4 rounded-xl px-4 py-3 text-xs leading-relaxed"
+            style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#7a7570' }}
+            role="status"
+          >
+            <span style={{ color: '#d4a574' }}>Nessun battito rilevato.</span>{' '}
+            Indossa lo smartwatch e verifica i permessi salute, oppure usa il
+            cuore sotto la card per esprimere interesse manualmente.
+          </div>
+        )}
         {profiles.length === 0 ? (
           <Card className="p-6 text-center text-sm text-muted-foreground">
             Nessun nuovo profilo per ora. Torna più tardi.
@@ -731,6 +809,38 @@ const Discovery = () => {
                   openDetail(p);
                 }}
               />
+
+              {/* Interesse manuale — fallback senza battito */}
+              {!p.isMock && (
+                <div className="mt-3 flex justify-center">
+                  <button
+                    type="button"
+                    disabled={sendingManual || manualSent.has(p.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (hasSwipedRef.current) return;
+                      void sendManualInterest(p.id);
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[11px] uppercase tracking-[0.18em] transition-colors disabled:opacity-60"
+                    style={{
+                      border: '1px solid #2a2a2a',
+                      color: manualSent.has(p.id) ? '#d4a574' : '#7a7570',
+                      background: 'transparent',
+                    }}
+                    aria-label={manualSent.has(p.id) ? 'Interesse inviato' : 'Esprimi interesse'}
+                  >
+                    <Heart
+                      className="h-3.5 w-3.5"
+                      strokeWidth={1.75}
+                      style={{
+                        color: '#d4a574',
+                        fill: manualSent.has(p.id) ? '#d4a574' : 'transparent',
+                      }}
+                    />
+                    {manualSent.has(p.id) ? 'Interesse inviato' : 'Mi interessa'}
+                  </button>
+                </div>
+              )}
             </div>
           );
         })()}

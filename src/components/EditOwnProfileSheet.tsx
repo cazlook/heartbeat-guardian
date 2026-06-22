@@ -1,11 +1,23 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { X, Plus, Loader2, Heart } from 'lucide-react';
+import { X, Plus, Loader2, Heart, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -44,6 +56,19 @@ export const EditOwnProfileSheet = ({ open, onOpenChange, onSaved }: Props) => {
   });
   const [interestsInput, setInterestsInput] = useState('');
   const [newPhoto, setNewPhoto] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    const { error } = await supabase.functions.invoke('delete-account');
+    if (error) {
+      setDeleting(false);
+      toast({ title: 'Eliminazione fallita', description: error.message, variant: 'destructive' });
+      return;
+    }
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  };
 
   useEffect(() => {
     if (!open || !user) return;
@@ -259,6 +284,55 @@ export const EditOwnProfileSheet = ({ open, onOpenChange, onSaved }: Props) => {
                 <Button type="submit" className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 uppercase tracking-wide text-xs" disabled={saving}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Salva'}
                 </Button>
+              </div>
+
+              {/* Privacy + eliminazione account */}
+              <div className="pt-6 mt-2 border-t border-border/40 space-y-4">
+                <Link
+                  to="/privacy"
+                  className="block text-xs underline underline-offset-4"
+                  style={{ color: '#7a7570' }}
+                  onClick={() => onOpenChange(false)}
+                >
+                  Informativa sulla privacy e sui dati cardiaci
+                </Link>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={deleting}
+                      className="w-full justify-start gap-2 text-xs uppercase tracking-wider hover:bg-destructive/10"
+                      style={{ color: '#9a5a4a' }}
+                    >
+                      {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                      Elimina account
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent style={{ background: '#111', border: '1px solid #2a2a2a' }}>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="font-display text-2xl" style={{ color: '#f0ece4' }}>
+                        Eliminare l'account?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription style={{ color: '#7a7570' }}>
+                        Verranno cancellati definitivamente profilo, foto, reazioni
+                        biometriche, match e messaggi. L'operazione è irreversibile.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel style={{ background: 'transparent', borderColor: '#2a2a2a', color: '#f0ece4' }}>
+                        Annulla
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteAccount}
+                        style={{ background: '#9a5a4a', color: '#f0ece4' }}
+                      >
+                        Elimina definitivamente
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </form>
           )}

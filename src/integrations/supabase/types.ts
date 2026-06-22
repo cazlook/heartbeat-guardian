@@ -16,43 +16,46 @@ export type Database = {
     Tables: {
       biometric_reactions: {
         Row: {
-          baseline_mean: number
-          baseline_std: number
+          baseline_mean: number | null
+          baseline_std: number | null
           confidence: number
           created_at: string
           duration_ms: number
           id: string
           intensity: Database["public"]["Enums"]["reaction_intensity"]
-          peak_bpm: number
+          peak_bpm: number | null
           profile_id: string
+          source: string
           viewer_id: string
-          z_score: number
+          z_score: number | null
         }
         Insert: {
-          baseline_mean: number
-          baseline_std: number
+          baseline_mean?: number | null
+          baseline_std?: number | null
           confidence: number
           created_at?: string
           duration_ms: number
           id?: string
           intensity: Database["public"]["Enums"]["reaction_intensity"]
-          peak_bpm: number
+          peak_bpm?: number | null
           profile_id: string
+          source?: string
           viewer_id: string
-          z_score: number
+          z_score?: number | null
         }
         Update: {
-          baseline_mean?: number
-          baseline_std?: number
+          baseline_mean?: number | null
+          baseline_std?: number | null
           confidence?: number
           created_at?: string
           duration_ms?: number
           id?: string
           intensity?: Database["public"]["Enums"]["reaction_intensity"]
-          peak_bpm?: number
+          peak_bpm?: number | null
           profile_id?: string
+          source?: string
           viewer_id?: string
-          z_score?: number
+          z_score?: number | null
         }
         Relationships: [
           {

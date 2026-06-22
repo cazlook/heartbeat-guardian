@@ -21,6 +21,7 @@ export interface LiveHrSample {
   receivedAt: number;   // when we read it from the OS
   latencyMs: number;    // receivedAt - sampleTime
   source: 'healthkit' | 'health_connect' | 'mock';
+  hrvMs?: number;       // heart-rate variability (SDNN/RMSSD, ms) when exposed
 }
 
 export type LiveHrListener = (s: LiveHrSample) => void;
@@ -33,6 +34,7 @@ export interface PollerOptions {
 export class HeartRatePoller {
   private timer: ReturnType<typeof setInterval> | null = null;
   private lastSampleTime = 0;
+  private lastHrvMs: number | undefined = undefined; // latest HRV seen this session
   private listeners = new Set<LiveHrListener>();
   private opts: Required<PollerOptions>;
   private platform = Capacitor.getPlatform();
@@ -73,11 +75,49 @@ export class HeartRatePoller {
 
   private async tick() {
     try {
+      // HRV is best-effort: refresh the latest value before reading HR so the
+      // emitted sample can carry it. Failures are non-fatal (HR still flows).
+      await this.refreshHrv();
       if (this.platform === 'ios') return await this.tickHealthKit();
       if (this.platform === 'android') return await this.tickHealthConnect();
       // web: no real data — emit nothing
     } catch (e) {
       log('HR_POLLER_ERR', { error: String(e) }, 'ERROR');
+    }
+  }
+
+  /** Best-effort HRV read. Caches the most recent value in `lastHrvMs`. */
+  private async refreshHrv() {
+    const end = new Date();
+    const start = new Date(end.getTime() - this.opts.windowMs);
+    try {
+      if (this.platform === 'ios') {
+        const { CapacitorHealthkit } = await import('@perfood/capacitor-healthkit');
+        const resp = await CapacitorHealthkit.queryHKitSampleType<any>({
+          sampleName: 'heartRateVariabilitySDNN',
+          startDate: start.toISOString(),
+          endDate: end.toISOString(),
+          limit: 10,
+        });
+        const samples = (resp?.resultData ?? []) as any[];
+        const latest = samples[samples.length - 1];
+        // HealthKit reports SDNN in seconds → convert to ms.
+        if (latest?.value != null) this.lastHrvMs = Number(latest.value) * 1000;
+      } else if (this.platform === 'android') {
+        const HC: any = await import('capacitor-health-connect');
+        const Plugin = HC.HealthConnect ?? HC.default;
+        const resp = await Plugin.readRecords({
+          type: 'HeartRateVariabilityRmssd',
+          timeRangeFilter: { type: 'between', startTime: start.toISOString(), endTime: end.toISOString() },
+        });
+        const records = resp?.records ?? [];
+        const latest = records[records.length - 1];
+        if (latest?.heartRateVariabilityMillis != null) {
+          this.lastHrvMs = Number(latest.heartRateVariabilityMillis);
+        }
+      }
+    } catch {
+      // Plugin/device may not expose HRV — leave lastHrvMs as-is.
     }
   }
 
@@ -100,6 +140,7 @@ export class HeartRatePoller {
       const now = Date.now();
       const sample: LiveHrSample = {
         bpm, sampleTime, receivedAt: now, latencyMs: now - sampleTime, source: 'healthkit',
+        hrvMs: this.lastHrvMs,
       };
       this.lastSampleTime = sampleTime;
       log('HR_SAMPLE', { ...sample });
@@ -125,6 +166,7 @@ export class HeartRatePoller {
         const now = Date.now();
         const sample: LiveHrSample = {
           bpm, sampleTime, receivedAt: now, latencyMs: now - sampleTime, source: 'health_connect',
+          hrvMs: this.lastHrvMs,
         };
         this.lastSampleTime = sampleTime;
         log('HR_SAMPLE', { ...sample });

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">HeartSync</string>
+    <string name="title_activity_main">HeartSync</string>
+    <string name="package_name">app.lovable.be9fc7fdc6b04998a36303e6a66496f3</string>
+    <string name="custom_url_scheme">app.lovable.be9fc7fdc6b04998a36303e6a66496f3</string>
+</resources>

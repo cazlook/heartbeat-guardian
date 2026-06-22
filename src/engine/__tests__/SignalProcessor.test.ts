@@ -7,7 +7,7 @@
  * - Full log verification
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createSession, processReading } from '../SignalProcessor';
 import { parseHealthKit } from '../smartwatch';
 import { clearLogBuffer, getLogBuffer } from '../logger';
@@ -91,21 +91,34 @@ describe('SignalProcessor v2', () => {
       const session = createSession(watchData, testConfig);
       advancePastLearning(session, 68);
 
-      // Gradual increase simulating genuine attraction
-      // Need to be above baseline + z_threshold * std
-      // baseline ~68, std ~3, so need bpm > 68 + 1.5*3 = 72.5
-      // Use stable elevated readings
-      const attractionReadings = [73, 74, 74, 75, 75, 74, 75, 74];
-      const results = attractionReadings.map(bpm => processReading(bpm, session, validContext, testConfig));
+      // v3 requires sustained elevation over real time: simulate readings
+      // spaced 3s apart with fake timers, accelerometer present and still.
+      vi.useFakeTimers();
+      try {
+        const stillContext: ContextData = {
+          ...validContext,
+          accelerometer_magnitude: 0.3, // present and below movement threshold
+        };
 
-      const accepted = results.filter(r => r.decision === 'ACCEPTED');
-      expect(accepted.length).toBeGreaterThan(0);
+        // Gradual climb within rate_of_change_max (5 bpm/reading),
+        // then a sustained plateau: z(76) = (76-68)/3 ≈ 2.67 ≥ z_threshold.
+        const attractionReadings = [71, 74, ...Array(14).fill(76)];
+        const results = attractionReadings.map(bpm => {
+          vi.advanceTimersByTime(3000);
+          return processReading(bpm, session, stillContext, testConfig);
+        });
 
-      accepted.forEach(r => {
-        expect(['ACCEPTED_VALID_REACTION', 'ACCEPTED_STRONG_REACTION']).toContain(r.reason_code);
-        expect(r.z_score).not.toBeNull();
-        expect(r.z_score!).toBeGreaterThanOrEqual(testConfig.z_threshold);
-      });
+        const accepted = results.filter(r => r.decision === 'ACCEPTED');
+        expect(accepted.length).toBeGreaterThan(0);
+
+        accepted.forEach(r => {
+          expect(['ACCEPTED_VALID_REACTION', 'ACCEPTED_STRONG_REACTION']).toContain(r.reason_code);
+          expect(r.z_score).not.toBeNull();
+          expect(r.z_score!).toBeGreaterThanOrEqual(testConfig.z_threshold);
+        });
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 
@@ -313,6 +326,81 @@ describe('SignalProcessor v2', () => {
       });
       expect(result.baseline_mean).toBeDefined();
       expect(result.baseline_std).toBeDefined();
+    });
+  });
+
+  // ─── HRV Resonance Discriminator (v3.1) ───
+  describe('HRV Resonance', () => {
+    // Build a session past learning with a short HRV baseline (~60ms at rest).
+    function setupWithHrvBaseline(restingHrv = 60) {
+      const session = createSession(makeWatchData(68, 3), testConfig);
+      session.learning_start_time = Date.now() - 10000;
+      const ctx: ContextData = { ...validContext, accelerometer_magnitude: 0.3, hrv_ms: restingHrv };
+      for (let i = 0; i < 12; i++) processReading(68, session, ctx, testConfig);
+      expect(session.baseline.hrv_count).toBeGreaterThanOrEqual(testConfig.hrv_min_baseline_count);
+      return session;
+    }
+
+    it('accepts elevated HR with a moderate HRV drop as resonant', () => {
+      vi.useFakeTimers();
+      try {
+        const session = setupWithHrvBaseline(60);
+        // Climb (kept near baseline HRV until frozen), then sustained plateau
+        // with HRV dropping ~10% — between resonance floor and stress ceiling.
+        const seq = [
+          { bpm: 71, hrv: 60 }, { bpm: 74, hrv: 56 },
+          ...Array(14).fill({ bpm: 76, hrv: 54 }),
+        ];
+        const results = seq.map(({ bpm, hrv }) => {
+          vi.advanceTimersByTime(3000);
+          return processReading(bpm, session, { ...validContext, accelerometer_magnitude: 0.3, hrv_ms: hrv }, testConfig);
+        });
+        const accepted = results.filter(r => r.decision === 'ACCEPTED');
+        expect(accepted.length).toBeGreaterThan(0);
+        expect(accepted.every(r => r.arousal === 'resonant')).toBe(true);
+        expect(accepted.every(r => (r.resonance ?? 0) > 0)).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('rejects elevated HR with an extreme HRV collapse as stress', () => {
+      vi.useFakeTimers();
+      try {
+        const session = setupWithHrvBaseline(60);
+        // Same HR profile, but HRV collapses ~60% (> stress threshold).
+        const seq = [
+          { bpm: 71, hrv: 60 }, { bpm: 74, hrv: 40 },
+          ...Array(14).fill({ bpm: 76, hrv: 24 }),
+        ];
+        const results = seq.map(({ bpm, hrv }) => {
+          vi.advanceTimersByTime(3000);
+          return processReading(bpm, session, { ...validContext, accelerometer_magnitude: 0.3, hrv_ms: hrv }, testConfig);
+        });
+        expect(results.filter(r => r.decision === 'ACCEPTED').length).toBe(0);
+        expect(results.some(r => r.reason_code === 'REJECTED_STRESS_PATTERN')).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('falls back to HR-only behaviour when HRV is absent', () => {
+      vi.useFakeTimers();
+      try {
+        const session = createSession(makeWatchData(68, 3), testConfig);
+        advancePastLearning(session, 68);
+        const ctx: ContextData = { ...validContext, accelerometer_magnitude: 0.3 }; // no hrv_ms
+        const results = [71, 74, ...Array(14).fill(76)].map(bpm => {
+          vi.advanceTimersByTime(3000);
+          return processReading(bpm, session, ctx, testConfig);
+        });
+        const accepted = results.filter(r => r.decision === 'ACCEPTED');
+        expect(accepted.length).toBeGreaterThan(0);
+        // No HRV → arousal/resonance stay null, decision unchanged.
+        expect(accepted.every(r => r.arousal === null)).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 });

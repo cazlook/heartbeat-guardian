@@ -15,6 +15,7 @@ import Matches from "./pages/Matches.tsx";
 import Chat from "./pages/Chat.tsx";
 import ProfileSetup from "./pages/ProfileSetup.tsx";
 import Profile from "./pages/Profile.tsx";
+import Privacy from "./pages/Privacy.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { InAppBanner } from "@/components/InAppBanner";
 import { useInAppNotifications } from "@/hooks/useInAppNotifications";
@@ -38,6 +39,7 @@ const App = () => (
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/privacy" element={<Privacy />} />
 
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/discovery" element={<ProtectedRoute><Discovery /></ProtectedRoute>} />
