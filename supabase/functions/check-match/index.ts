@@ -157,7 +157,31 @@ Deno.serve(async (req) => {
       .insert({ user_a, user_b, cardiac_score: cardiacScore })
       .select('id, cardiac_score')
       .single();
-    if (insertErr) return json({ error: insertErr.message }, 500);
+
+    // Handle concurrent duplicate: two parallel calls may race on the same
+    // (user_a, user_b) pair. Postgres code 23505 = unique_violation.
+    // Re-select the row that won the race and return it with already_existed.
+    if (insertErr) {
+      if ((insertErr as { code?: string }).code === '23505') {
+        const { data: raceWinner, error: reSelectErr } = await admin
+          .from('matches')
+          .select('id, cardiac_score')
+          .or(
+            `and(user_a.eq.${viewer_id},user_b.eq.${profile_id}),and(user_a.eq.${profile_id},user_b.eq.${viewer_id})`,
+          )
+          .maybeSingle();
+        if (reSelectErr || !raceWinner) {
+          return json({ error: reSelectErr?.message ?? 'Race condition: match not found' }, 500);
+        }
+        return json({
+          matched: true,
+          match_id: raceWinner.id,
+          cardiac_score: raceWinner.cardiac_score,
+          already_existed: true,
+        });
+      }
+      return json({ error: insertErr.message }, 500);
+    }
 
     return json({
       matched: true,

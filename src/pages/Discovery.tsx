@@ -41,13 +41,8 @@ import { MOCK_PROFILES, MockBpmSimulator, isMockProfileId } from '@/data/mockPro
 import { ProfileDetailSheet, type ProfileDetail } from '@/components/ProfileDetailSheet';
 import { EditOwnProfileSheet } from '@/components/EditOwnProfileSheet';
 
-// Debug mode: active in Vite dev OR when ?debug=1 is in the URL.
-// The Lovable preview serves a production build, so import.meta.env.DEV
-// alone isn't enough — the URL flag lets us turn on the dev override
-// (shorter learning phase, looser noise filter) on demand.
-const IS_DEV =
-  import.meta.env.DEV ||
-  (typeof window !== 'undefined' && window.location.search.includes('debug=1'));
+// Debug mode: active only in Vite dev builds.
+const IS_DEV = import.meta.env.DEV;
 
 // In dev mode, shorten the learning phase and loosen the noise filter so
 // the debug panel can produce meaningful decisions without waiting 90s of
@@ -65,7 +60,7 @@ const ENGINE_CONFIG: EngineConfig = IS_DEV
       sustained_min_readings: 1,
     }
   : DEFAULT_CONFIG;
-console.log('[Discovery] ENGINE_CONFIG active:', JSON.stringify(ENGINE_CONFIG), 'IS_DEV:', IS_DEV);
+if (IS_DEV) console.log('[Discovery] ENGINE_CONFIG active:', JSON.stringify(ENGINE_CONFIG), 'IS_DEV:', IS_DEV);
 
 interface ProfileCard {
   id: string;
@@ -172,9 +167,9 @@ const Discovery = () => {
     (async () => {
       if (!sessionRef.current || sessionOwnerRef.current !== userId) {
         const { data: me } = await supabase
-          .from('profiles')
+          .from('user_health')
           .select('baseline_mean, baseline_std')
-          .eq('id', userId)
+          .eq('user_id', userId)
           .maybeSingle();
 
         if (cancelled) return;
@@ -649,9 +644,9 @@ const Discovery = () => {
   const resetDebugSession = useCallback(async () => {
     if (!userId) return;
     const { data: me } = await supabase
-      .from('profiles')
+      .from('user_health')
       .select('baseline_mean, baseline_std')
-      .eq('id', userId)
+      .eq('user_id', userId)
       .maybeSingle();
     const restingHr = me?.baseline_mean ?? 70;
     const restingHrStd = me?.baseline_std ?? null;
