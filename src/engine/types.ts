@@ -34,6 +34,11 @@ export interface Baseline {
   combined_mean: number;
   combined_std: number;
   session_start_time: number;
+  // HRV baseline (online Welford). Populated only when HRV samples arrive.
+  hrv_mean: number;
+  hrv_std: number;
+  hrv_count: number;
+  hrv_m2: number;
 }
 
 // ─── Session State (Priority 3) ───
@@ -48,6 +53,7 @@ export interface SessionState {
   learning_readings: number[]; // recent window for variance
   recent_bpm_history: number[]; // last N readings for rate-of-change & sustained check
   recent_timestamps: number[]; // timestamps matching recent_bpm_history
+  recent_hrv: number[]; // last N HRV (ms) samples, when available
   sustained_above_start: number | null; // timestamp when z first exceeded threshold
   phase_changed_at: number | null;
 }
@@ -59,6 +65,7 @@ export interface ContextData {
   in_discovery_screen: boolean;
   signal_quality: number; // 0-1
   accelerometer_magnitude?: number; // optional, m/s²
+  hrv_ms?: number; // optional instantaneous HRV (RMSSD/SDNN, ms) for this reading
 }
 
 // ─── Decision (Priority 6) ───
@@ -73,10 +80,17 @@ export type ReasonCode =
   | 'REJECTED_RATE_OF_CHANGE'
   | 'REJECTED_NOT_SUSTAINED'
   | 'REJECTED_NO_ACCEL_LOW_CONFIDENCE'
+  | 'REJECTED_STRESS_PATTERN'
   | 'ACCEPTED_VALID_REACTION'
   | 'ACCEPTED_STRONG_REACTION';
 
 export type Decision = 'ACCEPTED' | 'REJECTED';
+
+// Autonomic arousal classification, derived from HR + HRV together.
+// 'resonant' = elevated HR with HRV behaviour consistent with positive
+// arousal; 'stress' = elevated HR with extreme HRV collapse (acute
+// stress / exertion); null = HRV not available for this reading.
+export type ArousalType = 'calm' | 'resonant' | 'stress';
 
 // ─── Reading Log (Priority 7) ───
 
@@ -91,6 +105,10 @@ export interface ReadingLog {
   reason_code: ReasonCode;
   timestamp: number;
   context?: ContextData;
+  // HRV-derived fields (null when HRV unavailable for this reading)
+  hrv_ms?: number | null;
+  arousal?: ArousalType | null;
+  resonance?: number | null; // 0–1 confidence that this is genuine resonance
 }
 
 // ─── Engine Config ───
@@ -119,6 +137,11 @@ export interface EngineConfig {
   no_accel_z_penalty: number;        // raise z_threshold by this when no accelerometer
   no_accel_sustained_multiplier: number; // multiply sustained requirements when no accel
   recent_history_size: number;       // size of recent_bpm_history buffer
+  // HRV resonance discriminator (only active when HRV samples are present)
+  hrv_enabled: boolean;
+  hrv_min_baseline_count: number;    // min HRV samples before the discriminator engages
+  hrv_resonance_min_drop_pct: number; // HRV drop vs baseline that corroborates arousal
+  hrv_stress_drop_pct: number;       // HRV collapse beyond this ⇒ acute stress ⇒ reject
 }
 
 export const DEFAULT_CONFIG: EngineConfig = {
@@ -144,4 +167,9 @@ export const DEFAULT_CONFIG: EngineConfig = {
   no_accel_z_penalty: 1.0,
   no_accel_sustained_multiplier: 5.0, // need 20 consecutive + 40s without accel
   recent_history_size: 20,        // keep last 20 readings
+  // HRV resonance discriminator
+  hrv_enabled: true,
+  hrv_min_baseline_count: 8,      // need a short HRV baseline before trusting it
+  hrv_resonance_min_drop_pct: 0.05, // ≥5% HRV drop corroborates real arousal
+  hrv_stress_drop_pct: 0.55,      // ≥55% HRV collapse ⇒ likely acute stress/exertion
 };

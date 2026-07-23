@@ -87,25 +87,34 @@ Deno.serve(async (req) => {
     const [aToBRes, bToARes] = await Promise.all([
       admin
         .from('biometric_reactions')
-        .select('z_score')
+        .select('z_score, source')
         .eq('viewer_id', viewer_id)
-        .eq('profile_id', profile_id)
-        .gte('z_score', Z_THRESHOLD),
+        .eq('profile_id', profile_id),
       admin
         .from('biometric_reactions')
-        .select('z_score')
+        .select('z_score, source')
         .eq('viewer_id', profile_id)
-        .eq('profile_id', viewer_id)
-        .gte('z_score', Z_THRESHOLD),
+        .eq('profile_id', viewer_id),
     ]);
 
     if (aToBRes.error) return json({ error: aToBRes.error.message }, 500);
     if (bToARes.error) return json({ error: bToARes.error.message }, 500);
 
-    const aToB = aToBRes.data ?? [];
-    const bToA = bToARes.data ?? [];
+    // A side qualifies with ≥ MIN_REACTIONS cardiac reactions above threshold
+    // (noisy signal needs confirmation) or a single explicit manual interest
+    // (fallback for users without a smartwatch — deliberate, no noise).
+    type Reaction = { z_score: number | null; source: string | null };
+    const cardiacAbove = (xs: Reaction[]) =>
+      xs.filter((r) => (r.source ?? 'cardiac') === 'cardiac' && Number(r.z_score) >= Z_THRESHOLD);
+    const hasManual = (xs: Reaction[]) =>
+      xs.some((r) => r.source === 'manual');
 
-    if (aToB.length < MIN_REACTIONS || bToA.length < MIN_REACTIONS) {
+    const aCardiac = cardiacAbove(aToBRes.data ?? []);
+    const bCardiac = cardiacAbove(bToARes.data ?? []);
+    const aQualifies = aCardiac.length >= MIN_REACTIONS || hasManual(aToBRes.data ?? []);
+    const bQualifies = bCardiac.length >= MIN_REACTIONS || hasManual(bToARes.data ?? []);
+
+    if (!aQualifies || !bQualifies) {
       return json({ matched: false });
     }
 
@@ -127,11 +136,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    const avg = (xs: { z_score: number }[]) =>
-      xs.reduce((s, r) => s + Number(r.z_score), 0) / xs.length;
+    // Manual-only side contributes the threshold z (score floor 50):
+    // an explicit interest is intent, not measured intensity.
+    const sideZ = (cardiac: Reaction[]) =>
+      cardiac.length >= MIN_REACTIONS
+        ? cardiac.reduce((s, r) => s + Number(r.z_score), 0) / cardiac.length
+        : Z_THRESHOLD;
 
-    const avgAtoB = avg(aToB);
-    const avgBtoA = avg(bToA);
+    const avgAtoB = sideZ(aCardiac);
+    const avgBtoA = sideZ(bCardiac);
     const combinedZ = (avgAtoB + avgBtoA) / 2;
     const cardiacScore = toCardiacScore(combinedZ);
 

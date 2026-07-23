@@ -1,16 +1,21 @@
 /**
- * HeartSync SignalProcessor v3 — Anti-False-Positive Engine
+ * HeartSync SignalProcessor v3.1 — Anti-False-Positive + Resonance Engine
  *
  * v3 additions over v2:
  * - Rate-of-change filter (rejects postural spikes)
  * - Sustained duration check (z must hold for N seconds)
  * - Accelerometer requirement (raises z threshold when absent)
  * - New reason codes: REJECTED_RATE_OF_CHANGE, REJECTED_NOT_SUSTAINED, REJECTED_NO_ACCEL_LOW_CONFIDENCE
+ *
+ * v3.1 additions:
+ * - HRV resonance discriminator: when HRV (ms) is present, corroborates real
+ *   arousal (resonant) and guards against acute stress/exertion
+ *   (REJECTED_STRESS_PATTERN). No HRV ⇒ identical to v3 (backward compatible).
  */
 
 import type {
   SmartWatchData, Baseline, SessionState, ContextData,
-  ReadingLog, Decision, ReasonCode, EngineConfig, Phase
+  ReadingLog, Decision, ReasonCode, EngineConfig, Phase, ArousalType
 } from './types';
 import { DEFAULT_CONFIG } from './types';
 import { log, logReading } from './logger';
@@ -19,7 +24,8 @@ import { log, logReading } from './logger';
 
 function makeReading(
   bpm: number, session: SessionState, z: number | null,
-  decision: Decision, reason_code: ReasonCode, context: ContextData
+  decision: Decision, reason_code: ReasonCode, context: ContextData,
+  extra?: { hrv_ms?: number | null; arousal?: ArousalType | null; resonance?: number | null }
 ): ReadingLog {
   const b = session.baseline;
   return {
@@ -27,6 +33,9 @@ function makeReading(
     baseline_mean: b.combined_mean, baseline_std: b.combined_std,
     z_score: z, phase: session.phase,
     decision, reason_code, timestamp: Date.now(), context,
+    hrv_ms: extra?.hrv_ms ?? (context.hrv_ms ?? null),
+    arousal: extra?.arousal ?? null,
+    resonance: extra?.resonance ?? null,
   };
 }
 
@@ -56,15 +65,58 @@ export function createSession(watchData: SmartWatchData, config: EngineConfig = 
       combined_mean: resting_hr,
       combined_std: Math.max(resting_hr_std, config.min_std_clamp),
       session_start_time: now,
+      hrv_mean: 0, hrv_std: 0, hrv_count: 0, hrv_m2: 0,
     },
     readings_count: 0,
     learning_start_time: now,
     learning_readings: [],
     recent_bpm_history: [],
     recent_timestamps: [],
+    recent_hrv: [],
     sustained_above_start: null,
     phase_changed_at: null,
   };
+}
+
+// ─── HRV (Priority: resonance discriminator) ───
+
+function updateHrvStats(baseline: Baseline, hrv: number): void {
+  baseline.hrv_count += 1;
+  const n = baseline.hrv_count;
+  const delta = hrv - baseline.hrv_mean;
+  baseline.hrv_mean += delta / n;
+  const delta2 = hrv - baseline.hrv_mean;
+  baseline.hrv_m2 += delta * delta2;
+  if (n >= 2) baseline.hrv_std = Math.sqrt(baseline.hrv_m2 / (n - 1));
+}
+
+/**
+ * Classify autonomic arousal from HR elevation + HRV behaviour.
+ *
+ * Honest scope: there is no clinically-proven HRV signature that separates
+ * "attraction" from "stress" in a 60s smartwatch window. We use HRV as a
+ * corroborating signal (genuine arousal suppresses HRV vs. the personal
+ * baseline) and as a guard against acute stress/exertion (an extreme HRV
+ * collapse is treated as stress, not resonance). When HRV is unavailable the
+ * caller skips this entirely and behaviour is identical to the HR-only engine.
+ */
+function classifyArousal(
+  session: SessionState, hrv: number, z: number, z_thresh: number, config: EngineConfig
+): { arousal: ArousalType; resonance: number } {
+  const b = session.baseline;
+  const dropPct = b.hrv_mean > 0 ? (b.hrv_mean - hrv) / b.hrv_mean : 0;
+
+  // Normalised HR elevation across the accept band (z_thresh → 4.0).
+  const zNorm = Math.max(0, Math.min(1, (z - z_thresh) / (4.0 - z_thresh)));
+  // Normalised HRV suppression toward the stress threshold.
+  const hrvNorm = Math.max(0, Math.min(1, dropPct / config.hrv_stress_drop_pct));
+
+  if (dropPct >= config.hrv_stress_drop_pct) {
+    return { arousal: 'stress', resonance: 0 };
+  }
+  const resonance = Math.max(0, Math.min(1, 0.6 * zNorm + 0.4 * hrvNorm));
+  const arousal: ArousalType = dropPct >= config.hrv_resonance_min_drop_pct ? 'resonant' : 'calm';
+  return { arousal, resonance };
 }
 
 // ─── Hybrid Baseline (Priority 2) ───
@@ -246,6 +298,16 @@ export function processReading(
   if (!baselineFrozen) {
     updateSessionStats(session.baseline, bpm);
     updateCombinedBaseline(session, config);
+    if (config.hrv_enabled && context.hrv_ms !== undefined && context.hrv_ms > 0) {
+      updateHrvStats(session.baseline, context.hrv_ms);
+    }
+  }
+  // Track recent HRV regardless of freeze, so the classifier sees the spike.
+  if (context.hrv_ms !== undefined && context.hrv_ms > 0) {
+    session.recent_hrv.push(context.hrv_ms);
+    if (session.recent_hrv.length > config.recent_history_size) {
+      session.recent_hrv = session.recent_hrv.slice(-config.recent_history_size);
+    }
   }
   session.readings_count += 1;
   session.learning_readings.push(bpm);
@@ -316,18 +378,36 @@ export function processReading(
     return r;
   }
 
-  // Step 12: Decision
-  let decision: Decision;
-  let reason_code: ReasonCode;
-  if (z >= strong_z_thresh) {
-    decision = 'ACCEPTED';
-    reason_code = 'ACCEPTED_STRONG_REACTION';
-  } else {
-    decision = 'ACCEPTED';
-    reason_code = 'ACCEPTED_VALID_REACTION';
+  // Step 12: HRV resonance discriminator (only when HRV is available and a
+  // short HRV baseline exists; otherwise behaviour is unchanged).
+  let arousal: ArousalType | null = null;
+  let resonance: number | null = null;
+  const hrvReady =
+    config.hrv_enabled &&
+    context.hrv_ms !== undefined &&
+    context.hrv_ms > 0 &&
+    session.baseline.hrv_count >= config.hrv_min_baseline_count;
+
+  if (hrvReady) {
+    const cls = classifyArousal(session, context.hrv_ms as number, z, z_thresh, config);
+    arousal = cls.arousal;
+    resonance = cls.resonance;
+    if (cls.arousal === 'stress') {
+      const r = makeReading(bpm, session, z, 'REJECTED', 'REJECTED_STRESS_PATTERN', context,
+        { arousal, resonance });
+      logReading(r);
+      return r;
+    }
   }
 
-  const reading = makeReading(bpm, session, z, decision, reason_code, context);
+  // Step 13: Decision
+  const decision: Decision = 'ACCEPTED';
+  const reason_code: ReasonCode = z >= strong_z_thresh
+    ? 'ACCEPTED_STRONG_REACTION'
+    : 'ACCEPTED_VALID_REACTION';
+
+  const reading = makeReading(bpm, session, z, decision, reason_code, context,
+    { arousal, resonance });
   logReading(reading);
   return reading;
 }

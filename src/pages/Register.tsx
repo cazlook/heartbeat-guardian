@@ -228,6 +228,17 @@ const Register = () => {
               Accedi
             </Link>
           </p>
+          <p className="text-[11px] mt-3" style={{ color: '#5a5550' }}>
+            Registrandoti accetti l'{' '}
+            <Link
+              to="/privacy"
+              className="underline underline-offset-4"
+              style={{ color: '#7a7570' }}
+            >
+              informativa sulla privacy
+            </Link>
+            , inclusa quella sui dati cardiaci.
+          </p>
         </div>
       </div>
     </div>
