@@ -194,9 +194,6 @@ export type Database = {
       profiles: {
         Row: {
           age: number | null
-          baseline_mean: number | null
-          baseline_std: number | null
-          baseline_updated_at: string | null
           bio: string | null
           created_at: string
           distance_km: number | null
@@ -210,9 +207,6 @@ export type Database = {
         }
         Insert: {
           age?: number | null
-          baseline_mean?: number | null
-          baseline_std?: number | null
-          baseline_updated_at?: string | null
           bio?: string | null
           created_at?: string
           distance_km?: number | null
@@ -226,9 +220,6 @@ export type Database = {
         }
         Update: {
           age?: number | null
-          baseline_mean?: number | null
-          baseline_std?: number | null
-          baseline_updated_at?: string | null
           bio?: string | null
           created_at?: string
           distance_km?: number | null
@@ -238,6 +229,27 @@ export type Database = {
           looking_for?: string | null
           name?: string | null
           photos?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_health: {
+        Row: {
+          user_id: string
+          baseline_mean: number | null
+          baseline_std: number | null
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          baseline_mean?: number | null
+          baseline_std?: number | null
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          baseline_mean?: number | null
+          baseline_std?: number | null
           updated_at?: string
         }
         Relationships: []

@@ -70,6 +70,9 @@ Deno.serve(async (req) => {
         .remove(objects.map((o) => `${userId}/${o.name}`));
     }
 
+    // 4a. Health baseline (owner-only table, not cascade-deleted with profile).
+    await admin.from('user_health').delete().eq('user_id', userId);
+
     // 4. Profile row.
     await admin.from('profiles').delete().eq('id', userId);
 

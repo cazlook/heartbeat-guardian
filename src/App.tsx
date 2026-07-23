@@ -47,7 +47,7 @@ const App = () => (
               <Route path="/chat/:matchId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
               <Route path="/profile/setup" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
               <Route path="/profile/:userId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/debug" element={<ProtectedRoute><Debug /></ProtectedRoute>} />
+              {import.meta.env.DEV && <Route path="/debug" element={<ProtectedRoute><Debug /></ProtectedRoute>} />}
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
